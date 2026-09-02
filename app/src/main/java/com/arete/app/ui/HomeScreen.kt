@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,10 +45,12 @@ fun HomeScreen(
     onStartPlanned: (String) -> Unit,
     onStartFree: () -> Unit,
     onOpenRoutines: () -> Unit,
-    onOpenHistory: () -> Unit
+    onOpenHistory: () -> Unit,
+    onOpenProgress: () -> Unit
 ) {
     val state by viewModel.homeState.collectAsStateWithLifecycle()
     val timerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
+    val progress by viewModel.progressState.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
             TopAppBar(title = {
@@ -131,6 +134,26 @@ fun HomeScreen(
             }
 
             item {
+                Card(Modifier.fillMaxWidth().clickable(onClick = onOpenProgress)) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                            Text("${progress.weekly.currentCount} / ${progress.weekly.goal} esta semana", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                if (progress.weekly.streak == 1) "🔥 1 semana cumpliendo"
+                                else "🔥 ${progress.weekly.streak} semanas cumpliendo",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            progress.latestRecord?.let {
+                                Text("PR reciente · ${it.exerciseName} · ${formatHomeWeight(it.weightKg)} kg × ${it.reps}", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        Text("Ver", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            item {
                 Card(Modifier.fillMaxWidth()) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp),
@@ -171,3 +194,5 @@ fun HomeScreen(
     }
 }
 
+private fun formatHomeWeight(value: Double): String =
+    if (value % 1.0 == 0.0) value.toInt().toString() else "%.1f".format(value).replace('.', ',')

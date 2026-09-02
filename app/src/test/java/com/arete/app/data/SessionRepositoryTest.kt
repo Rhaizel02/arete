@@ -173,6 +173,31 @@ class SessionRepositoryTest {
         assertEquals(sessionExercise.sourceRoutineExerciseId, changedSession.sourceRoutineExerciseId)
     }
 
+    @Test
+    fun completedSetsCannotBeRelabeledBySubstitutionAndReplacementCanBeAdded() = runTest {
+        seedExercises()
+        val sessionId = sessions.startFreeWorkout()
+        val originalId = sessions.addExercise(sessionId, BENCH)
+        var completed = database.sessionDao().getSets(originalId).first().copy(weightKg = 80.0, reps = 8)
+        sessions.updateSet(completed)
+        completed = database.sessionDao().getSet(completed.id)!!
+        sessions.completeSet(completed, timerEnabled = false)
+
+        var blocked = false
+        try {
+            sessions.substituteExercise(originalId, DUMBBELL_PRESS)
+        } catch (_: IllegalStateException) {
+            blocked = true
+        }
+        assertTrue(blocked)
+        assertEquals(BENCH, database.sessionDao().getExercise(originalId)!!.exerciseId)
+        assertTrue(database.sessionDao().getSet(completed.id)!!.isCompleted)
+
+        val replacementId = sessions.addExercise(sessionId, DUMBBELL_PRESS)
+        assertEquals(DUMBBELL_PRESS, database.sessionDao().getExercise(replacementId)!!.exerciseId)
+        assertEquals(2, database.sessionDao().getExercises(sessionId).size)
+    }
+
     private suspend fun seedExercises() {
         database.exerciseDao().upsertAll(listOf(
             exercise(BENCH, "Press banca", "Bench Press"),

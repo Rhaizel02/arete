@@ -299,3 +299,74 @@ interface SessionDao {
     @Insert suspend fun insertBodyWeight(entry: BodyWeightEntryEntity)
     @Insert suspend fun insertSkippedWorkout(entry: SkippedPlannedWorkoutEntity)
 }
+
+@Dao
+interface ProgressDao {
+    @Query("""
+        SELECT ws.id AS sessionId,
+               ws.startedAt AS sessionStartedAt,
+               ws.completedAt AS sessionCompletedAt,
+               se.id AS sessionExerciseId,
+               se.exerciseId AS exerciseId,
+               se.exerciseNameEsSnapshot AS exerciseName,
+               e.primaryMuscle AS primaryMuscle,
+               se.incrementKgSnapshot AS incrementKg,
+               ss.id AS setId,
+               ss.position AS setPosition,
+               ss.targetRepsMinSnapshot AS targetRepsMin,
+               ss.targetRepsMaxSnapshot AS targetRepsMax,
+               ss.isWarmupSnapshot AS isWarmup,
+               ss.isCompleted AS isCompleted,
+               ss.weightKg AS weightKg,
+               ss.reps AS reps,
+               ss.rir AS rir,
+               ss.isFailure AS isFailure
+        FROM workout_sessions ws
+        JOIN session_exercises se ON se.sessionId = ws.id
+        JOIN session_sets ss ON ss.sessionExerciseId = se.id
+        LEFT JOIN exercises e ON e.id = se.exerciseId
+        WHERE ws.status = 'COMPLETED' AND ws.completedAt IS NOT NULL
+        ORDER BY ws.completedAt, se.position, ss.position
+    """)
+    fun observePerformanceSets(): Flow<List<PerformanceSetRow>>
+
+    @Query("""
+        SELECT ws.id AS sessionId,
+               ws.startedAt AS sessionStartedAt,
+               ws.completedAt AS sessionCompletedAt,
+               se.id AS sessionExerciseId,
+               se.exerciseId AS exerciseId,
+               se.exerciseNameEsSnapshot AS exerciseName,
+               e.primaryMuscle AS primaryMuscle,
+               se.incrementKgSnapshot AS incrementKg,
+               ss.id AS setId,
+               ss.position AS setPosition,
+               ss.targetRepsMinSnapshot AS targetRepsMin,
+               ss.targetRepsMaxSnapshot AS targetRepsMax,
+               ss.isWarmupSnapshot AS isWarmup,
+               ss.isCompleted AS isCompleted,
+               ss.weightKg AS weightKg,
+               ss.reps AS reps,
+               ss.rir AS rir,
+               ss.isFailure AS isFailure
+        FROM workout_sessions ws
+        JOIN session_exercises se ON se.sessionId = ws.id
+        JOIN session_sets ss ON ss.sessionExerciseId = se.id
+        LEFT JOIN exercises e ON e.id = se.exerciseId
+        WHERE ws.status = 'COMPLETED' AND ws.completedAt IS NOT NULL AND ws.id = :sessionId
+        ORDER BY se.position, ss.position
+    """)
+    suspend fun getPerformanceSets(sessionId: String): List<PerformanceSetRow>
+
+    @Query("SELECT * FROM body_weight_entries ORDER BY recordedAt")
+    fun observeBodyWeights(): Flow<List<BodyWeightEntryEntity>>
+
+    @Query("SELECT * FROM body_weight_entries WHERE id = :id LIMIT 1")
+    suspend fun getBodyWeight(id: String): BodyWeightEntryEntity?
+
+    @Upsert
+    suspend fun upsertBodyWeight(entry: BodyWeightEntryEntity)
+
+    @Delete
+    suspend fun deleteBodyWeight(entry: BodyWeightEntryEntity)
+}

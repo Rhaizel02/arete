@@ -11,11 +11,14 @@ import com.arete.app.AreteApplication
 import com.arete.app.data.AreteRepository
 import com.arete.app.data.ExerciseDraft
 import com.arete.app.data.PreferencesRepository
+import com.arete.app.data.ProgressRepository
+import com.arete.app.data.ExerciseProgress
 import com.arete.app.data.SetDraft
 import com.arete.app.data.SessionRepository
 import com.arete.app.data.SessionViewData
 import com.arete.app.data.ThemeMode
 import com.arete.app.data.local.ExerciseEntity
+import com.arete.app.data.local.BodyWeightEntryEntity
 import com.arete.app.data.local.RoutineEntity
 import com.arete.app.data.local.RoutineExerciseEntity
 import com.arete.app.data.local.RoutineWithWorkouts
@@ -37,7 +40,8 @@ class AreteViewModel(
     application: Application,
     private val repository: AreteRepository,
     private val preferences: PreferencesRepository,
-    private val sessions: SessionRepository
+    private val sessions: SessionRepository,
+    private val progress: ProgressRepository
 ) : AndroidViewModel(application) {
     val routines = repository.routines.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val themeMode = preferences.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
@@ -47,6 +51,8 @@ class AreteViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val completedSessions = sessions.completedSessions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val progressState = progress.dashboard(preferences.weeklyGoal)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.ProgressDashboard())
 
     val exerciseQuery = MutableStateFlow("")
     val exercises = exerciseQuery.flatMapLatest(repository::searchExercises)
@@ -67,6 +73,8 @@ class AreteViewModel(
     fun observeRoutine(id: String): Flow<RoutineWithWorkouts?> = repository.observeRoutine(id)
 
     fun observeSession(id: String): Flow<SessionViewData> = sessions.observeSession(id)
+
+    fun observeExerciseProgress(id: String): Flow<ExerciseProgress?> = progress.observeExerciseProgress(id)
 
     fun startPlannedWorkout(workoutId: String, onStarted: (String) -> Unit) = launchAction {
         onStarted(sessions.startPlannedWorkout(workoutId))
@@ -118,8 +126,12 @@ class AreteViewModel(
 
     fun skipRestTimer(session: WorkoutSessionEntity) = launchAction { sessions.skipTimer(session) }
 
-    fun finishSession(session: WorkoutSessionEntity, onFinished: () -> Unit) = launchAction("Entrenamiento finalizado") {
+    fun finishSession(session: WorkoutSessionEntity, onFinished: () -> Unit) = launchAction {
         sessions.finishSession(session)
+        val record = progress.recordsForSession(session.id).firstOrNull()
+        _messages.emit(record?.let {
+            "Nuevo PR · ${it.exerciseName} · ${formatKg(it.weightKg)} kg × ${it.reps}"
+        } ?: "Entrenamiento finalizado")
         onFinished()
     }
 
@@ -135,6 +147,17 @@ class AreteViewModel(
 
     fun setRestTimerEnabled(enabled: Boolean) = viewModelScope.launch {
         preferences.setRestTimerEnabled(enabled)
+    }
+
+    fun setWeeklyGoal(goal: Int) = viewModelScope.launch { preferences.setWeeklyGoal(goal) }
+
+    fun saveBodyWeight(id: String?, weightKg: Double, notes: String, onSaved: () -> Unit = {}) = launchAction("Peso guardado") {
+        progress.saveBodyWeight(id, weightKg, notes)
+        onSaved()
+    }
+
+    fun deleteBodyWeight(entry: BodyWeightEntryEntity) = launchAction("Registro eliminado") {
+        progress.deleteBodyWeight(entry)
     }
 
     fun createRoutine(name: String, onCreated: (String) -> Unit) = launchAction {
@@ -228,7 +251,12 @@ class AreteViewModel(
                 application,
                 application.repository,
                 application.preferences,
-                application.sessionRepository
+                application.sessionRepository,
+                application.progressRepository
             ) as T
     }
+
+    private fun formatKg(value: Double): String =
+        if (value % 1.0 == 0.0) value.toInt().toString()
+        else "%.2f".format(value).trimEnd('0').trimEnd(',').trimEnd('.').replace('.', ',')
 }

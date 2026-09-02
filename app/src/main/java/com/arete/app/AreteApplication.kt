@@ -4,6 +4,7 @@ import android.app.Application
 import com.arete.app.data.AreteRepository
 import com.arete.app.data.CatalogSeeder
 import com.arete.app.data.PreferencesRepository
+import com.arete.app.data.ProgressRepository
 import com.arete.app.data.SessionRepository
 import com.arete.app.data.local.AreteDatabase
 
@@ -14,4 +15,5 @@ class AreteApplication : Application() {
     }
     val preferences: PreferencesRepository by lazy { PreferencesRepository(this) }
     val sessionRepository: SessionRepository by lazy { SessionRepository(database) }
+    val progressRepository: ProgressRepository by lazy { ProgressRepository(database) }
 }

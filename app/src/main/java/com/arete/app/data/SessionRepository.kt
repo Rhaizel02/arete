@@ -150,6 +150,9 @@ class SessionRepository(
 
     suspend fun substituteExercise(sessionExerciseId: String, newExerciseId: String) = database.withTransaction {
         val sessionExercise = findExercise(sessionExerciseId)
+        check(dao.getSets(sessionExerciseId).none { it.isCompleted }) {
+            "No se puede sustituir un ejercicio con series completadas. Añade el sustituto como ejercicio nuevo."
+        }
         val replacement = database.exerciseDao().findById(newExerciseId)
             ?: throw IllegalArgumentException("El ejercicio sustituto no existe")
         val session = dao.getSession(sessionExercise.sessionId) ?: return@withTransaction
@@ -162,10 +165,8 @@ class SessionRepository(
         )
         val previous = dao.getLastPerformance(listOf(replacement.id), session.session.startedAt)
         dao.getSets(sessionExercise.id).forEach { set ->
-            if (!set.isCompleted) {
-                val last = previous.firstOrNull { it.position == set.position }
-                dao.updateSet(set.copy(weightKg = last?.weightKg, reps = last?.reps))
-            }
+            val last = previous.firstOrNull { it.position == set.position }
+            dao.updateSet(set.copy(weightKg = last?.weightKg, reps = last?.reps))
         }
     }
 

@@ -76,3 +76,25 @@ data class LastPerformanceRow(
     val rir: Int?,
     val isFailure: Boolean
 )
+
+/** A single joined read model used to derive every progress metric without N+1 queries. */
+data class PerformanceSetRow(
+    val sessionId: String,
+    val sessionStartedAt: Long,
+    val sessionCompletedAt: Long,
+    val sessionExerciseId: String,
+    val exerciseId: String?,
+    val exerciseName: String,
+    val primaryMuscle: String?,
+    val incrementKg: Double?,
+    val setId: String,
+    val setPosition: Int,
+    val targetRepsMin: Int,
+    val targetRepsMax: Int,
+    val isWarmup: Boolean,
+    val isCompleted: Boolean,
+    val weightKg: Double?,
+    val reps: Int?,
+    val rir: Int?,
+    val isFailure: Boolean
+)

@@ -1,12 +1,12 @@
 # Arete
 
-Arete es una aplicación Android personal y offline-first para diseñar rutinas y registrar entrenamientos reales. Los Bloques 1 y 2 incluyen catálogo local, ejercicios personalizados, rutinas, prescripciones, ejecución de sesiones, entrenamiento libre e historial editable.
+Arete es una aplicación Android personal y offline-first para diseñar rutinas, registrar entrenamientos reales y convertir el histórico en progreso comprensible. Los Bloques 1 a 3 incluyen catálogo local, rutinas, ejecución de sesiones, historial editable, PR, e1RM, consistencia y peso corporal.
 
 ## Stack y arquitectura
 
 - Kotlin, Jetpack Compose y Material 3 en una única actividad.
 - Room es la fuente de verdad para rutinas, sesiones activas e historial.
-- DataStore Preferences guarda el tema y el ajuste global del temporizador.
+- DataStore Preferences guarda el tema, el ajuste global del temporizador y el objetivo semanal.
 - Los repositorios concentran operaciones transaccionales: activación y edición de rutinas, importación, creación de snapshots y mutaciones del entrenamiento.
 - Sin backend, red, framework de inyección ni estadísticas derivadas persistidas.
 
@@ -26,13 +26,19 @@ Al comenzar un workout se copian sus ejercicios, prescripciones, notas, descanso
 - completar una serie con una pulsación y precargar valores útiles de la última sesión;
 - consultar la última ejecución de cada ejercicio sin abrir el historial y mediante una consulta Room por lote;
 - añadir, borrar y reordenar ejercicios y series;
-- sustituir un ejercicio únicamente en la sesión actual;
+- sustituir un ejercicio únicamente en la sesión actual; si ya hay series completadas se conserva su identidad histórica y se ofrece añadir el sustituto como ejercicio nuevo;
 - representar superseries, trisets y circuitos con `groupId`;
 - usar un temporizador de descanso opcional con ±15 s, salto y vibración;
 - iniciar un entrenamiento libre y guardarlo después como rutina;
 - finalizar, recuperar, editar o eliminar sesiones desde el historial.
 
 Cada edición relevante se escribe inmediatamente en Room mediante consultas parciales. La sesión activa, las series completadas y el fin absoluto del temporizador sobreviven a navegación, cambio de aplicación y recreación del proceso.
+
+## Progreso
+
+El destino **Progreso** resume actividad reciente, objetivo semanal, racha, PR, estadísticas, sugerencias conservadoras y peso corporal. El detalle de cada ejercicio muestra sesiones, mejor peso/serie, e1RM estimado, evolución y un historial con gráfica. Todos estos datos se derivan de una consulta Room conjunta; no existen tablas de estadísticas ni cachés que puedan desincronizarse al editar o eliminar una sesión.
+
+El e1RM usa Epley (`peso × (1 + repeticiones / 30)`) y solo admite series de trabajo completadas de 1 a 12 repeticiones. Los PR cubren mayor peso, mayor e1RM estimado y más repeticiones para un peso. La racha cuenta semanas de lunes a domingo que alcanzan el objetivo; una semana actual incompleta no rompe prematuramente la racha anterior.
 
 ## Schema Room v2
 
@@ -42,7 +48,7 @@ Tablas principales:
 
 - `exercises`, `routines`, `workouts`, `routine_exercises`, `prescription_sets`;
 - `workout_sessions`, `session_exercises`, `session_sets`;
-- `body_weight_entries` y `skipped_planned_workouts`, reservadas para bloques posteriores.
+- `body_weight_entries`, activada para el histórico y tendencia de peso, y `skipped_planned_workouts`, reservada para bloques posteriores.
 
 Los snapshots de sesión aseguran que editar una plantilla no modifique entrenamientos en curso ni históricos.
 
@@ -57,6 +63,6 @@ El contrato sigue en la versión 1 y se documenta en [docs/routine-json-v1.md](d
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-Las pruebas locales usan Room real en memoria bajo Robolectric. Además de la cobertura del Bloque 1, validan creación de snapshots, sesión activa única, autosave y recuperación, última sesión y precarga, finalización, borrado, sustitución temporal, mutaciones dinámicas, entrenamiento libre, temporizador y `groupId`. La prueba instrumental abre una base v1 real, ejecuta la migración a v2 y comprueba tanto los datos previos como las columnas nuevas.
+Las pruebas locales usan Room real en memoria bajo Robolectric. Además de la cobertura previa, validan el bloqueo de sustitución histórica, e1RM, cada tipo de PR, exclusiones, recálculo tras editar/borrar, límites semanales, rachas, sugerencias, estadísticas y CRUD/tendencia de peso. La prueba instrumental abre una base v1 real, ejecuta la migración a v2 y comprueba tanto los datos previos como las columnas nuevas.
 
-Más detalles de implementación y validación: [docs/block-2-workout-engine.md](docs/block-2-workout-engine.md).
+Más detalles: [Bloque 2](docs/block-2-workout-engine.md) y [Bloque 3](docs/block-3-progress.md).

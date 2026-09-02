@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -35,6 +36,9 @@ sealed interface AppScreen {
     data object Routines : AppScreen
     data object Catalog : AppScreen
     data object History : AppScreen
+    data object Progress : AppScreen
+    data object BodyWeight : AppScreen
+    data class ExerciseProgress(val exerciseId: String) : AppScreen
     data class Session(val sessionId: String) : AppScreen
     data class SessionExercisePicker(
         val sessionId: String,
@@ -99,7 +103,7 @@ fun AreteApp(viewModel: AreteViewModel) {
 
     val current = stack.last()
     val isRoot = current == AppScreen.Home || current == AppScreen.Routines ||
-        current == AppScreen.Catalog || current == AppScreen.History
+        current == AppScreen.Catalog || current == AppScreen.History || current == AppScreen.Progress
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().padding(bottom = if (isRoot) 80.dp else 0.dp)) {
         when (val screen = stack.last()) {
@@ -111,7 +115,8 @@ fun AreteApp(viewModel: AreteViewModel) {
                 },
                 onStartFree = { viewModel.startFreeWorkout { push(AppScreen.Session(it)) } },
                 onOpenRoutines = { selectRoot(AppScreen.Routines) },
-                onOpenHistory = { selectRoot(AppScreen.History) }
+                onOpenHistory = { selectRoot(AppScreen.History) },
+                onOpenProgress = { selectRoot(AppScreen.Progress) }
             )
             AppScreen.Routines -> RoutineListScreen(
                 viewModel = viewModel,
@@ -136,6 +141,13 @@ fun AreteApp(viewModel: AreteViewModel) {
                 viewModel = viewModel,
                 onOpenSession = { push(AppScreen.Session(it)) }
             )
+            AppScreen.Progress -> ProgressScreen(
+                viewModel = viewModel,
+                onOpenExercise = { push(AppScreen.ExerciseProgress(it)) },
+                onOpenBodyWeight = { push(AppScreen.BodyWeight) }
+            )
+            AppScreen.BodyWeight -> BodyWeightScreen(viewModel, ::back)
+            is AppScreen.ExerciseProgress -> ExerciseProgressScreen(screen.exerciseId, viewModel, ::back)
             is AppScreen.Session -> SessionScreen(
                 sessionId = screen.sessionId,
                 viewModel = viewModel,
@@ -232,6 +244,7 @@ fun AreteApp(viewModel: AreteViewModel) {
                     Triple(AppScreen.Home, Icons.Default.Home, "Inicio"),
                     Triple(AppScreen.Routines, Icons.AutoMirrored.Filled.List, "Rutinas"),
                     Triple(AppScreen.Catalog, Icons.Default.FitnessCenter, "Ejercicios"),
+                    Triple(AppScreen.Progress, Icons.Default.Insights, "Progreso"),
                     Triple(AppScreen.History, Icons.Default.History, "Historial")
                 ).forEach { (screen, icon, label) ->
                     NavigationBarItem(

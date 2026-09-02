@@ -191,7 +191,8 @@ fun SessionScreen(
                     index = index,
                     total = exercises.size,
                     viewModel = viewModel,
-                    onSubstitute = { onSubstitute(exercise.exercise.id) }
+                    onSubstitute = { onSubstitute(exercise.exercise.id) },
+                    onAddReplacement = onAddExercise
                 )
             }
             if (!active && session.sourceWorkoutId == null) {
@@ -285,12 +286,14 @@ private fun SessionExerciseCard(
     index: Int,
     total: Int,
     viewModel: AreteViewModel,
-    onSubstitute: () -> Unit
+    onSubstitute: () -> Unit,
+    onAddReplacement: () -> Unit
 ) {
     val exercise = details.exercise
     var menu by remember { mutableStateOf(false) }
     var sessionNotes by remember(exercise.id) { mutableStateOf(exercise.sessionNotes) }
     val grouped = exercise.groupIdSnapshot != null
+    val hasCompletedSets = details.sets.any { it.isCompleted }
     Card(
         Modifier.fillMaxWidth(),
         colors = if (grouped) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -314,7 +317,15 @@ private fun SessionExerciseCard(
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Acciones del ejercicio") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Sustituir solo esta sesión") }, onClick = { menu = false; onSubstitute() })
+                        DropdownMenuItem(
+                            text = { Text(if (hasCompletedSets) "No se puede sustituir: hay series hechas" else "Sustituir solo esta sesión") },
+                            enabled = !hasCompletedSets,
+                            onClick = { menu = false; onSubstitute() }
+                        )
+                        if (hasCompletedSets) DropdownMenuItem(
+                            text = { Text("Añadir sustituto como ejercicio nuevo") },
+                            onClick = { menu = false; onAddReplacement() }
+                        )
                         DropdownMenuItem(
                             text = { Text("Subir") },
                             enabled = index > 0,
