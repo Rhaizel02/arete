@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
 
 @Entity(
     tableName = "exercises",
@@ -107,7 +108,6 @@ data class PrescriptionSetEntity(
 )
 
 /**
- * Session tables are intentionally present in schema v1, but Block 1 does not expose session UI.
  * Names and prescription targets are snapshots so later routine edits cannot rewrite history.
  */
 @Entity(
@@ -127,7 +127,9 @@ data class WorkoutSessionEntity(
     val startedAt: Long,
     val completedAt: Long? = null,
     val status: SessionStatus = SessionStatus.IN_PROGRESS,
-    val notes: String = ""
+    val notes: String = "",
+    val restTimerEndAt: Long? = null,
+    val restTimerDurationSeconds: Int? = null
 )
 
 @Entity(
@@ -148,7 +150,9 @@ data class SessionExerciseEntity(
     val restSecondsSnapshot: Int,
     val incrementKgSnapshot: Double?,
     val notesSnapshot: String,
-    val groupIdSnapshot: String?
+    val groupIdSnapshot: String?,
+    val sourceRoutineExerciseId: String? = null,
+    @ColumnInfo(defaultValue = "''") val sessionNotes: String = ""
 )
 
 @Entity(
@@ -202,4 +206,3 @@ data class SkippedPlannedWorkoutEntity(
     val skippedAt: Long,
     val reason: String = ""
 )
-

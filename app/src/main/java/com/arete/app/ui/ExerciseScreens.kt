@@ -66,10 +66,11 @@ fun ExercisePickerScreen(
     viewModel: AreteViewModel,
     onBack: () -> Unit,
     onSelect: (String) -> Unit,
-    onCreateCustom: () -> Unit
+    onCreateCustom: () -> Unit,
+    title: String = "Añadir ejercicio"
 ) {
     ExerciseCatalogScaffold(
-        title = "Añadir ejercicio",
+        title = title,
         viewModel = viewModel,
         onBack = onBack,
         onCreateCustom = onCreateCustom,

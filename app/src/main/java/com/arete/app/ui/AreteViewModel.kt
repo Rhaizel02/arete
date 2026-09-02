@@ -12,11 +12,16 @@ import com.arete.app.data.AreteRepository
 import com.arete.app.data.ExerciseDraft
 import com.arete.app.data.PreferencesRepository
 import com.arete.app.data.SetDraft
+import com.arete.app.data.SessionRepository
+import com.arete.app.data.SessionViewData
 import com.arete.app.data.ThemeMode
 import com.arete.app.data.local.ExerciseEntity
 import com.arete.app.data.local.RoutineEntity
 import com.arete.app.data.local.RoutineExerciseEntity
 import com.arete.app.data.local.RoutineWithWorkouts
+import com.arete.app.data.local.SessionExerciseEntity
+import com.arete.app.data.local.SessionSetEntity
+import com.arete.app.data.local.WorkoutSessionEntity
 import com.arete.app.data.local.WorkoutEntity
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,10 +36,17 @@ import kotlinx.coroutines.launch
 class AreteViewModel(
     application: Application,
     private val repository: AreteRepository,
-    private val preferences: PreferencesRepository
+    private val preferences: PreferencesRepository,
+    private val sessions: SessionRepository
 ) : AndroidViewModel(application) {
     val routines = repository.routines.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val themeMode = preferences.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
+    val restTimerEnabled = preferences.restTimerEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val homeState = sessions.homeState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val completedSessions = sessions.completedSessions
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val exerciseQuery = MutableStateFlow("")
     val exercises = exerciseQuery.flatMapLatest(repository::searchExercises)
@@ -53,6 +65,77 @@ class AreteViewModel(
     }
 
     fun observeRoutine(id: String): Flow<RoutineWithWorkouts?> = repository.observeRoutine(id)
+
+    fun observeSession(id: String): Flow<SessionViewData> = sessions.observeSession(id)
+
+    fun startPlannedWorkout(workoutId: String, onStarted: (String) -> Unit) = launchAction {
+        onStarted(sessions.startPlannedWorkout(workoutId))
+    }
+
+    fun startFreeWorkout(onStarted: (String) -> Unit) = launchAction {
+        onStarted(sessions.startFreeWorkout())
+    }
+
+    fun addSessionExercise(sessionId: String, exerciseId: String, onAdded: () -> Unit = {}) = launchAction {
+        sessions.addExercise(sessionId, exerciseId)
+        onAdded()
+    }
+
+    fun substituteSessionExercise(sessionExerciseId: String, exerciseId: String, onDone: () -> Unit = {}) = launchAction("Ejercicio sustituido") {
+        sessions.substituteExercise(sessionExerciseId, exerciseId)
+        onDone()
+    }
+
+    fun deleteSessionExercise(exercise: SessionExerciseEntity) = launchAction {
+        sessions.deleteExercise(exercise)
+    }
+
+    fun moveSessionExercise(sessionId: String, exerciseId: String, delta: Int) = launchAction {
+        sessions.moveExercise(sessionId, exerciseId, delta)
+    }
+
+    fun updateSessionNotes(session: WorkoutSessionEntity, notes: String) = launchAction {
+        sessions.updateSessionNotes(session, notes)
+    }
+
+    fun updateSessionExerciseNotes(exercise: SessionExerciseEntity, notes: String) = launchAction {
+        sessions.updateExerciseNotes(exercise, notes)
+    }
+
+    fun updateSessionSet(set: SessionSetEntity) = launchAction { sessions.updateSet(set) }
+
+    fun toggleSessionSetComplete(set: SessionSetEntity) = launchAction {
+        sessions.completeSet(set, restTimerEnabled.value)
+    }
+
+    fun addSessionSet(exerciseId: String) = launchAction { sessions.addSet(exerciseId) }
+
+    fun deleteSessionSet(set: SessionSetEntity) = launchAction { sessions.deleteSet(set) }
+
+    fun adjustRestTimer(session: WorkoutSessionEntity, seconds: Int) = launchAction {
+        sessions.adjustTimer(session, seconds)
+    }
+
+    fun skipRestTimer(session: WorkoutSessionEntity) = launchAction { sessions.skipTimer(session) }
+
+    fun finishSession(session: WorkoutSessionEntity, onFinished: () -> Unit) = launchAction("Entrenamiento finalizado") {
+        sessions.finishSession(session)
+        onFinished()
+    }
+
+    fun deleteSession(session: WorkoutSessionEntity, onDeleted: () -> Unit) = launchAction("Sesión eliminada") {
+        sessions.deleteSession(session)
+        onDeleted()
+    }
+
+    fun saveSessionAsRoutine(sessionId: String, name: String, onSaved: (String) -> Unit) =
+        launchAction("Rutina creada desde la sesión") {
+            onSaved(sessions.saveAsRoutine(sessionId, name))
+        }
+
+    fun setRestTimerEnabled(enabled: Boolean) = viewModelScope.launch {
+        preferences.setRestTimerEnabled(enabled)
+    }
 
     fun createRoutine(name: String, onCreated: (String) -> Unit) = launchAction {
         onCreated(repository.createRoutine(name))
@@ -141,6 +224,11 @@ class AreteViewModel(
     class Factory(private val application: AreteApplication) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            AreteViewModel(application, application.repository, application.preferences) as T
+            AreteViewModel(
+                application,
+                application.repository,
+                application.preferences,
+                application.sessionRepository
+            ) as T
     }
 }
