@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Arete</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#0f131c;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary-fixed":"#002113","on-tertiary-fixed":"#2a1700","tertiary-fixed":"#ffddb8","secondary-fixed-dim":"#4edea3","surface-variant":"#31353e","surface-dim":"#0f131c","secondary-fixed":"#6ffbbe","on-secondary-container":"#00311f","outline":"#8d90a0","on-primary-container":"#eeefff","surface-container-highest":"#31353e","surface-container":"#1c2028","surface-container-high":"#262a33","on-secondary":"#003824","on-error":"#690005","error":"#ffb4ab","tertiary":"#ffb95f","primary-fixed-dim":"#b4c5ff","surface-container-lowest":"#0a0e16","on-tertiary-container":"#ffeedd","error-container":"#93000a","background":"#0f131c","on-primary-fixed":"#00174b","on-surface-variant":"#c3c6d7","inverse-on-surface":"#2c3039","surface-tint":"#b4c5ff","outline-variant":"#434655","inverse-surface":"#dfe2ee","surface-bright":"#353942","on-secondary-fixed-variant":"#005236","surface":"#0f131c","on-error-container":"#ffdad6","inverse-primary":"#0053db","on-surface":"#dfe2ee","tertiary-fixed-dim":"#ffb95f","secondary-container":"#00a572","secondary":"#4edea3","primary-fixed":"#dbe1ff","on-primary-fixed-variant":"#003ea8","surface-container-low":"#181c24","on-tertiary":"#472a00","primary":"#b4c5ff","on-primary":"#002a78","on-background":"#dfe2ee","tertiary-container":"#996100","on-tertiary-fixed-variant":"#653e00","primary-container":"#2563eb"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1rem","margin-mobile":"1rem",gutter:"0.75rem","space-sm":"0.5rem","space-xl":"1.5rem","space-xs":"0.25rem","space-md":"0.75rem",margin:"1rem","gutter-mobile":"0.5rem"},fontFamily:{"headline-lg":["Space Grotesk"],"metric-table":["Hanken Grotesk"],"headline-xl":["Space Grotesk"],"label-sm":["Hanken Grotesk"],"body-md":["Hanken Grotesk"],"headline-sm":["Space Grotesk"],"body-lg":["Hanken Grotesk"],"headline-xl-mobile":["Space Grotesk"],"label-md":["Hanken Grotesk"],"metric-display":["Space Grotesk"]},fontSize:{"headline-lg":["24px",{lineHeight:"28px",fontWeight:"600"}],"metric-table":["16px",{lineHeight:"20px",fontWeight:"600"}],"headline-xl":["36px",{lineHeight:"40px",fontWeight:"700"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"22px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-xl-mobile":["28px",{lineHeight:"32px",fontWeight:"700"}],"label-md":["13px",{lineHeight:"16px",fontWeight:"500"}],"metric-display":["30px",{lineHeight:"32px",fontWeight:"700"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-background text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Arete Logo Mark" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwKP2rj53vZRZijRpI0k4n1cPuJE84sDxBR3e-ps_-u7iTFqLQzx2LwAKB2QADkOgN-FQgDV2ul9W_TOTN3BSaC5qmAjZ09AjQauUwVC551wn023JSr8q6btOM2TMe1ZYN-GNpWxYOy1eiY4gXBqS4w0S81oVrW4qKbl_gIQSyNVMf91NlbtxGGBXE8QtNZCPLwrQ5VXkY59VcIV4sld0X_ONscUCe04-ggR7JoM5OVg5qmHTZdBKw3A"/><div class="flex flex-col justify-center"><span class="font-label-sm text-label-sm tracking-wider uppercase text-outline">Arete Performance</span><span class="font-headline-sm text-headline-sm text-on-surface leading-tight tracking-tight">Progreso</span></div></div><div class="flex items-center gap-space-sm"><button aria-label="Notificaciones" class="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin-mobile gap-space-xl">
+<!-- Sub-header segment filter & Date Range Selector -->
+<div class="flex flex-col gap-space-md">
+<!-- Segmented Filter Rail (Fintech tab rail) -->
+<div class="flex items-center p-1 bg-surface-container-low rounded-xl">
+<button class="flex-1 py-1.5 px-space-xs text-center rounded-lg bg-surface-container-highest text-on-surface font-label-md text-label-md transition-all shadow-sm">
+        Resumen
+      </button>
+<button class="flex-1 py-1.5 px-space-xs text-center rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+        Fuerza
+      </button>
+<button class="flex-1 py-1.5 px-space-xs text-center rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+        Volumen
+      </button>
+<button class="flex-1 py-1.5 px-space-xs text-center rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+        Medidas
+      </button>
+</div>
+<!-- Range pill indicator -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Rendimiento analítico</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+<span class="font-label-md text-label-md">Últimos 3 meses</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Primary Metric Bento Grid (2x2) -->
+<div class="grid grid-cols-2 gap-gutter">
+<!-- Card 1: 1RM Press Banca -->
+<div class="flex flex-col p-3.5 bg-surface-container rounded-xl justify-between min-w-0">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary">fitness_center</span>
+<span class="font-label-sm text-label-sm text-outline truncate">Press banca e1RM</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg tracking-tight text-on-surface">102,5 <span class="font-body-md text-body-md text-outline">kg</span></span>
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+<span class="font-label-sm text-label-sm">+12%</span>
+</div>
+<!-- Sparkline Mini -->
+<svg class="w-12 h-5 text-primary" fill="none" viewbox="0 0 48 20">
+<path d="M2 17L12 14L22 15L32 8L46 3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<circle cx="46" cy="3" fill="currentColor" r="2"></circle>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 2: Peso Corporal -->
+<div class="flex flex-col p-3.5 bg-surface-container rounded-xl justify-between min-w-0">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-secondary">monitor_weight</span>
+<span class="font-label-sm text-label-sm text-outline truncate">Mejor peso</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg tracking-tight text-on-surface">72,4 <span class="font-body-md text-body-md text-outline">kg</span></span>
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[12px]">trending_down</span>
+<span class="font-label-sm text-label-sm">-1,8 kg</span>
+</div>
+<!-- Sparkline Downward -->
+<svg class="w-12 h-5 text-secondary" fill="none" viewbox="0 0 48 20">
+<path d="M2 4L14 7L24 6L34 13L46 16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<circle cx="46" cy="16" fill="currentColor" r="2"></circle>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 3: Volumen Total -->
+<div class="flex flex-col p-3.5 bg-surface-container rounded-xl justify-between min-w-0">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-tertiary">layers</span>
+<span class="font-label-sm text-label-sm text-outline truncate">Volumen total</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg tracking-tight text-on-surface">102,4 <span class="font-body-md text-body-md text-outline">t</span></span>
+<div class="flex items-center gap-1 pt-1">
+<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[12px]">north_east</span>
+<span class="font-label-sm text-label-sm">+28%</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline truncate">vs ant.</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Sesiones Totales -->
+<div class="flex flex-col p-3.5 bg-surface-container rounded-xl justify-between min-w-0">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary">event_available</span>
+<span class="font-label-sm text-label-sm text-outline truncate">Sesiones</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg tracking-tight text-on-surface">48 <span class="font-body-md text-body-md text-outline">ses.</span></span>
+<div class="flex items-center gap-1 pt-1">
+<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+<span class="font-label-sm text-label-sm">100% racha</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive Strength Graph Section (Revolut Investment Style) -->
+<div class="flex flex-col p-4 bg-surface-container rounded-xl gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Evolución de fuerza</span>
+<div class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm">
+<span>+22,5 kg</span>
+<span>(↑ 28%)</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-metric-display text-metric-display text-on-surface">102,5</span>
+<span class="font-headline-sm text-headline-sm text-outline">kg e1RM</span>
+</div>
+</div>
+<!-- Exercise Selector Pill Dropdown -->
+<button class="flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-surface-variant rounded-lg text-on-surface transition-colors shrink-0">
+<span class="font-label-md text-label-md font-semibold text-primary">Press banca</span>
+<span class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
+</button>
+</div>
+<!-- Chart Visual Canvas (SVG Line + Translucent Fill Gradient) -->
+<div class="relative w-full pt-2">
+<!-- High Watermark Tooltip Callout -->
+<div class="absolute top-2 right-6 flex flex-col items-center pointer-events-none">
+<div class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm shadow-md">
+          102,5 kg · Pico actual
+        </div>
+<div class="w-1.5 h-1.5 bg-primary-container rotate-45 -mt-0.5"></div>
+</div>
+<svg class="w-full h-36 overflow-visible" fill="none" viewbox="0 0 340 140">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2563eb" stop-opacity="0.35"></stop>
+<stop offset="90%" stop-color="#2563eb" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Horizontal Reference Grid Lines (Hairline) -->
+<line stroke="#31353e" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="340" y1="20" y2="20"></line>
+<line stroke="#31353e" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="340" y1="60" y2="60"></line>
+<line stroke="#31353e" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="340" y1="100" y2="100"></line>
+<!-- Area Fill -->
+<path d="M 10 115 Q 55 105, 95 90 T 180 65 T 260 45 T 325 22 L 325 130 L 10 130 Z" fill="url(#chartGradient)"></path>
+<!-- Main Trend Line -->
+<path d="M 10 115 Q 55 105, 95 90 T 180 65 T 260 45 T 325 22" stroke="#2563eb" stroke-linecap="round" stroke-width="3"></path>
+<!-- Historical Session Nodes -->
+<circle cx="10" cy="115" fill="#0f131c" r="3.5" stroke="#2563eb" stroke-width="2"></circle>
+<circle cx="95" cy="90" fill="#0f131c" r="3.5" stroke="#2563eb" stroke-width="2"></circle>
+<circle cx="180" cy="65" fill="#0f131c" r="3.5" stroke="#2563eb" stroke-width="2"></circle>
+<circle cx="260" cy="45" fill="#0f131c" r="3.5" stroke="#2563eb" stroke-width="2"></circle>
+<!-- Current Peak Target Dot -->
+<circle cx="325" cy="22" fill="#b4c5ff" r="5" stroke="#2563eb" stroke-width="3"></circle>
+</svg>
+<!-- Time Axis Labels -->
+<div class="flex justify-between text-outline font-label-sm text-label-sm px-2 pt-2">
+<span>Ene</span>
+<span>Feb</span>
+<span>Mar</span>
+<span>Abr (Hoy)</span>
+</div>
+</div>
+</div>
+<!-- Muscle Volume Breakdown (Split Donut / Proportional Stack) -->
+<div class="flex flex-col p-4 bg-surface-container rounded-xl gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Volumen muscular</span>
+<span class="font-body-md text-body-md text-outline">Distribución por grupo de carga</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm">Total 102,4 t</span>
+</div>
+<!-- Segmented Proportion Bar -->
+<div class="flex h-3 w-full rounded-full overflow-hidden bg-surface-container-low gap-0.5">
+<div class="h-full bg-primary" style="width: 38%;"></div>
+<div class="h-full bg-primary-container" style="width: 20%;"></div>
+<div class="h-full bg-secondary" style="width: 15%;"></div>
+<div class="h-full bg-tertiary" style="width: 12%;"></div>
+<div class="h-full bg-secondary-fixed-dim" style="width: 10%;"></div>
+<div class="h-full bg-outline" style="width: 5%;"></div>
+</div>
+<!-- Muscle Group Details Grid -->
+<div class="grid grid-cols-2 gap-x-space-md gap-y-space-xs pt-1">
+<div class="flex items-center justify-between py-1 border-none">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-body-md text-body-md text-on-surface">Piernas</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">38%</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="font-body-md text-body-md text-on-surface">Espalda</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">20%</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-body-md text-body-md text-on-surface">Pecho</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">15%</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="font-body-md text-body-md text-on-surface">Hombros</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">12%</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-fixed-dim"></span>
+<span class="font-body-md text-body-md text-on-surface">Brazos</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">10%</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="font-body-md text-body-md text-on-surface">Core</span>
+</div>
+<span class="font-metric-table text-metric-table text-on-surface">5%</span>
+</div>
+</div>
+</div>
+<!-- Recent Personal Records (PRs) List -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-tertiary">emoji_events</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Últimos récords (PR)</span>
+</div>
+<button class="font-label-md text-label-md text-primary font-semibold hover:underline">Ver todos</button>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- PR 1 -->
+<div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px] text-primary">fitness_center</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-metric-table text-metric-table text-on-surface truncate">Press banca</span>
+<span class="font-body-md text-body-md text-outline">80 kg × 10 reps · 12 abr</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm">+2,5 kg</span>
+<span class="material-symbols-outlined text-[18px] text-outline">chevron_right</span>
+</div>
+</div>
+<!-- PR 2 -->
+<div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px] text-tertiary">sports_gymnastics</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-metric-table text-metric-table text-on-surface truncate">Sentadilla trasera</span>
+<span class="font-body-md text-body-md text-outline">140 kg × 5 reps · 10 abr</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm">+5,0 kg</span>
+<span class="material-symbols-outlined text-[18px] text-outline">chevron_right</span>
+</div>
+</div>
+<!-- PR 3 -->
+<div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px] text-primary">exercise</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-metric-table text-metric-table text-on-surface truncate">Remo con barra</span>
+<span class="font-body-md text-body-md text-outline">70 kg × 8 reps · 05 abr</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm">+5,0 kg</span>
+<span class="material-symbols-outlined text-[18px] text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Body Weight Progression Trend Card -->
+<div class="flex flex-col p-4 bg-surface-container rounded-xl gap-space-md mb-2">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Composición corporal</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-headline-lg text-headline-lg text-on-surface">74,2 kg</span>
+<span class="font-label-md text-label-md text-secondary">-0,8 kg últ. 30 días</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[20px]">show_chart</span>
+</div>
+</div>
+<!-- Lightweight Bodyweight Vector Curve -->
+<div class="w-full">
+<svg class="w-full h-20 overflow-visible" fill="none" viewbox="0 0 340 70">
+<path d="M 0 15 Q 60 22, 110 32 T 210 45 T 280 50 L 340 55" stroke="#4edea3" stroke-linecap="round" stroke-width="2.5"></path>
+<circle cx="340" cy="55" fill="#6ffbbe" r="4" stroke="#003824" stroke-width="2"></circle>
+</svg>
+<div class="flex justify-between text-outline font-label-sm text-label-sm pt-1">
+<span>75,0 kg (Ene)</span>
+<span>74,6 kg (Feb)</span>
+<span>74,2 kg (Hoy)</span>
+</div>
+</div>
+</div>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.35)]" data-active-classes="text-primary-container font-semibold"><div class="h-16 px-gutter-mobile flex items-center justify-around"><a class="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-space-xs text-on-surface-variant transition-colors" data-path="inicio" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm tracking-tight">Inicio</span></a><a class="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-space-xs text-on-surface-variant transition-colors" data-path="entrenamiento" href="#"><span class="material-symbols-outlined text-[22px]">fitness_center</span><span class="font-label-sm text-label-sm tracking-tight">Entrenamiento</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-space-xs transition-colors text-primary-container font-semibold" data-path="progreso" href="#"><span class="material-symbols-outlined text-[22px]">query_stats</span><span class="font-label-sm text-label-sm tracking-tight">Progreso</span></a><a class="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-space-xs text-on-surface-variant transition-colors" data-path="mas" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm tracking-tight">Más</span></a></div></nav></body></html>

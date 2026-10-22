@@ -1,241 +1,108 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
 package com.arete.app.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.arete.app.data.ActivityDayStatus
+import com.arete.app.ui.theme.ActionBlue
 
 @Composable
 fun HomeScreen(
-    viewModel: AreteViewModel,
-    onContinue: (String) -> Unit,
-    onStartPlanned: (String) -> Unit,
-    onStartFree: () -> Unit,
-    onOpenRoutines: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenProgress: () -> Unit,
-    onOpenActivity: () -> Unit,
-    onOpenSettings: () -> Unit
+    viewModel: AreteViewModel, onContinue: (String) -> Unit, onStartPlanned: (String) -> Unit,
+    onStartFree: () -> Unit, onOpenRoutines: () -> Unit, onOpenHistory: () -> Unit,
+    onOpenProgress: () -> Unit, onOpenActivity: () -> Unit, onOpenSettings: () -> Unit
 ) {
-    val state by viewModel.homeState.collectAsStateWithLifecycle()
-    val timerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
+    val training by viewModel.homeState.collectAsStateWithLifecycle()
     val progress by viewModel.progressState.collectAsStateWithLifecycle()
     val planning by viewModel.planningState.collectAsStateWithLifecycle()
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Arete", fontWeight = FontWeight.Bold)
-                        Text("Entrena. Registra. Mejora.", style = MaterialTheme.typography.labelMedium)
-                    }
-                },
-                actions = { IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Settings, "Ajustes") } }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            state?.activeSession?.let { active ->
-                item {
-                    Card(
-                        Modifier.fillMaxWidth().clickable { onContinue(active.session.id) },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Bolt, null, tint = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    " Entrenamiento en curso",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Text(active.session.workoutNameSnapshot, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                            Text("${active.exercises.sumOf { it.sets.count { set -> set.isCompleted } }} series completadas")
-                            Button(onClick = { onContinue(active.session.id) }, Modifier.fillMaxWidth()) {
-                                Icon(Icons.Default.PlayArrow, null)
-                                Text("Continuar entrenamiento")
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { Text("Próximo entrenamiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
+    Scaffold(topBar = {
+        TopAppBar(title = { Column {
+            Text("ARETE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Inicio", style = MaterialTheme.typography.headlineSmall)
+        } }, actions = { IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Tune, "Ajustes") } })
+    }) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            item { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Tu próxima versión", style = MaterialTheme.typography.headlineLarge)
+                Text("Disciplina hoy, resultados mañana.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } }
             item {
-                val next = state?.nextWorkout
-                if (next != null) {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(next.routineName, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                            Text(next.workoutName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                            Text("${next.exerciseCount} ejercicios · secuencia automática")
-                            Button(
-                                enabled = state?.activeSession == null,
-                                onClick = { onStartPlanned(next.workoutId) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.FitnessCenter, null)
-                                Text("Entrenar ${next.workoutName}")
-                            }
-                        }
+                val active = training?.activeSession
+                val next = training?.nextWorkout
+                TonalCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary)
+                        Text(if (active != null) "  SESIÓN EN CURSO" else "  SIGUIENTE SESIÓN", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     }
-                } else {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("No hay una rutina activa con workouts", style = MaterialTheme.typography.titleMedium)
-                            Text("Activa una rutina para que Arete mantenga la secuencia por ti.")
-                            OutlinedButton(onClick = onOpenRoutines) { Text("Gestionar rutinas") }
-                        }
+                    Text(active?.session?.workoutNameSnapshot ?: next?.workoutName ?: "Empieza a entrenar", style = MaterialTheme.typography.headlineLarge)
+                    Text(when {
+                        active != null -> "${active.exercises.size} ejercicios · series completadas: ${active.exercises.sumOf { it.sets.count { set -> set.isCompleted } }}"
+                        next != null -> "${next.routineName} · ${next.exerciseCount} ejercicios"
+                        else -> "Activa una rutina o empieza un entrenamiento libre."
+                    }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(
+                        onClick = { when { active != null -> onContinue(active.session.id); next != null -> onStartPlanned(next.workoutId); else -> onStartFree() } },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White),
+                        shape = MaterialTheme.shapes.medium
+                    ) { Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(8.dp)); Text(if (active != null) "Continuar entrenamiento" else "Empezar entrenamiento") }
+                    if (active == null) TextButton(onClick = if (next != null) onStartFree else onOpenRoutines, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (next != null) "Entrenamiento libre" else "Gestionar rutinas")
                     }
                 }
             }
-
             item {
-                OutlinedButton(
-                    enabled = state?.activeSession == null,
-                    onClick = onStartFree,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Bolt, null)
-                    Text("Entrenamiento libre")
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TonalCard(Modifier.weight(1f).fillMaxHeight(), onClick = onOpenProgress) {
+                        Text("◎  OBJETIVO", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${progress.weekly.currentCount} / ${progress.weekly.goal}", style = MaterialTheme.typography.displaySmall)
+                        Text(if (progress.weekly.currentCount >= progress.weekly.goal) "Semana completada" else "sesiones esta semana", style = MaterialTheme.typography.bodySmall)
+                        LinearProgressIndicator(progress = { (progress.weekly.currentCount.toFloat() / progress.weekly.goal).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth(), color = ActionBlue, trackColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                    }
+                    TonalCard(Modifier.weight(1f).fillMaxHeight(), onClick = onOpenProgress) {
+                        Row { Icon(Icons.Default.LocalFireDepartment, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp)); Text(" RACHA", style = MaterialTheme.typography.labelMedium) }
+                        Text("${progress.weekly.streak}", style = MaterialTheme.typography.displaySmall)
+                        Text("${if (progress.weekly.streak == 1) "semana" else "semanas"} cumpliendo", style = MaterialTheme.typography.bodySmall)
+                        Text("Constancia semanal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
-
+            progress.latestRecord?.let { record -> item {
+                TonalCard(onClick = onOpenProgress) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("🏆  ÚLTIMO PR", style = MaterialTheme.typography.labelMedium); Text(uiDate(record.achievedAt), style = MaterialTheme.typography.labelSmall) }
+                    Text(record.exerciseName, style = MaterialTheme.typography.titleLarge)
+                    Text("${uiNumber(record.weightKg)} kg × ${record.reps} reps", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
+                }
+            } }
             item {
                 val today = planning.today
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
-                            Text(" Estado de hoy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        }
-                        when {
-                            today.completedSession != null -> {
-                                Text("Entrenamiento completado", fontWeight = FontWeight.Medium)
-                                Text(today.completedSession.workoutNameSnapshot, style = MaterialTheme.typography.bodySmall)
-                            }
-                            today.skipped != null -> {
-                                Text("Hoy no entreno", fontWeight = FontWeight.Medium)
-                                Text(today.skipped.workoutNameSnapshot, style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = { viewModel.undoSkippedDay(today.skipped) }) { Text("Deshacer") }
-                            }
-                            today.plannedWorkout != null -> {
-                                Text("Planificado · ${today.plannedWorkout.name}", fontWeight = FontWeight.Medium)
-                                Text("La secuencia real no cambia si hoy no puedes entrenar.", style = MaterialTheme.typography.bodySmall)
-                                OutlinedButton(onClick = viewModel::skipToday) { Text("Hoy no entreno") }
-                            }
-                            else -> Text("Sin entrenamiento planificado", style = MaterialTheme.typography.bodyMedium)
-                        }
-                        TextButton(onClick = onOpenActivity) { Text("Ver actividad") }
+                SectionHeading("Hoy", "Ver actividad", onOpenActivity)
+                TonalCard {
+                    when {
+                        today.completedSession != null -> { Text("Entrenamiento completado", style = MaterialTheme.typography.titleMedium); Text(today.completedSession.workoutNameSnapshot) }
+                        today.skipped != null -> { Text("Hoy no entreno", style = MaterialTheme.typography.titleMedium); Text(today.skipped.workoutNameSnapshot); TextButton(onClick = { viewModel.undoSkippedDay(today.skipped) }) { Text("Deshacer") } }
+                        today.plannedWorkout != null -> { Text("Planificado · ${today.plannedWorkout.name}", style = MaterialTheme.typography.titleMedium); Text("La secuencia de tu rutina se mantiene.", style = MaterialTheme.typography.bodySmall); OutlinedButton(onClick = viewModel::skipToday) { Text("Hoy no entreno") } }
+                        else -> Text("Sin planificación para hoy", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-
-            item {
-                Card(Modifier.fillMaxWidth().clickable(onClick = onOpenProgress)) {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = MaterialTheme.colorScheme.primary)
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text(
-                                if (progress.weekly.currentCount >= progress.weekly.goal) "Semana completada"
-                                else "${progress.weekly.currentCount} / ${progress.weekly.goal} esta semana",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                if (progress.weekly.streak == 1) "🔥 1 semana cumpliendo"
-                                else "🔥 ${progress.weekly.streak} semanas cumpliendo",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            progress.latestRecord?.let {
-                                Text("PR reciente · ${it.exerciseName} · ${formatHomeWeight(it.weightKg)} kg × ${it.reps}", style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                        Text("Ver", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
+            val upcoming = planning.activity.filter { it.epochDay > planning.today.epochDay && it.status == ActivityDayStatus.PLANNED }.take(3)
+            if (upcoming.isNotEmpty()) {
+                item { SectionHeading("Próximos entrenamientos", "Ver plan", onOpenActivity) }
+                upcoming.forEach { day -> item(key = day.epochDay) { TonalCard(onClick = onOpenActivity) {
+                    Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.padding(start = 12.dp)) { Text(day.plannedWorkoutName.orEmpty(), style = MaterialTheme.typography.titleMedium); Text(uiDate(day.timestamp), style = MaterialTheme.typography.bodySmall) } }
+                } } }
             }
-
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Timer, null)
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("Temporizador de descanso", fontWeight = FontWeight.Medium)
-                            Text("Se inicia al completar una serie de trabajo", style = MaterialTheme.typography.bodySmall)
-                        }
-                        Switch(checked = timerEnabled, onCheckedChange = viewModel::setRestTimerEnabled)
-                    }
-                }
-            }
-
-            if (!state?.recentSessions.isNullOrEmpty()) {
-                item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Sesiones recientes", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        TextButton(onClick = onOpenHistory) {
-                            Icon(Icons.Default.History, null)
-                            Text("Ver todas")
-                        }
-                    }
-                }
-                state?.recentSessions.orEmpty().forEach { session ->
-                    item(key = session.id) {
-                        Card(Modifier.fillMaxWidth().clickable { onOpenHistory() }) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text(session.workoutNameSnapshot, fontWeight = FontWeight.Medium)
-                                Text(session.routineNameSnapshot ?: "Entrenamiento libre", style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
+            if (!training?.recentSessions.isNullOrEmpty()) item { TextButton(onClick = onOpenHistory, modifier = Modifier.fillMaxWidth()) { Text("Consultar historial") } }
         }
     }
 }
-
-private fun formatHomeWeight(value: Double): String =
-    if (value % 1.0 == 0.0) value.toInt().toString() else "%.1f".format(value).replace('.', ',')

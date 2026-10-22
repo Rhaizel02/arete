@@ -72,162 +72,6 @@ import com.arete.app.data.local.BodyWeightEntryEntity
 import java.util.Date
 import kotlin.math.max
 
-@Composable
-fun ProgressScreen(
-    viewModel: AreteViewModel,
-    onOpenExercise: (String) -> Unit,
-    onOpenBodyWeight: () -> Unit
-) {
-    val state by viewModel.progressState.collectAsStateWithLifecycle()
-    Scaffold(topBar = { TopAppBar(title = { Text("Progreso", fontWeight = FontWeight.Bold) }) }) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            item { WeeklyCard(state, viewModel::setWeeklyGoal) }
-            state.latestRecord?.let { record -> item { RecentRecordCard(record) } }
-            if (state.suggestions.isNotEmpty()) {
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Sugerencia conservadora", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                            state.suggestions.take(3).forEach { suggestion ->
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text("Buen momento para probar ${formatMetric(suggestion.suggestedWeightKg)} kg", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                    Text("${suggestion.exerciseName}: completaste todas las series en ${suggestion.targetReps} reps al peso actual.", style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item { GeneralStatsCard(state) }
-            item {
-                Card(Modifier.fillMaxWidth().clickable(onClick = onOpenBodyWeight)) {
-                    Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.MonitorWeight, null, tint = MaterialTheme.colorScheme.primary)
-                        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                            Text("Peso corporal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            val latest = state.bodyWeightTrend.latestKg
-                            Text(if (latest == null) "Añade tu primer registro" else "Último: ${formatMetric(latest)} kg · ${state.bodyWeights.size} registros")
-                        }
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, "Abrir")
-                    }
-                }
-            }
-            item { Text("Progreso por ejercicio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
-            if (state.exercises.isEmpty()) item {
-                EmptyState("Aún no hay rendimiento", "Completa series de trabajo para ver evolución, estimaciones y PR.")
-            }
-            items(state.exercises, key = { it.exerciseId }) { exercise ->
-                ExerciseProgressCard(exercise) { onOpenExercise(exercise.exerciseId) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeeklyCard(state: ProgressDashboard, onGoalChange: (Int) -> Unit) {
-    val weekly = state.weekly
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("${weekly.currentCount} / ${weekly.goal} esta semana", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(if (weekly.streak == 1) "🔥 1 semana cumpliendo" else "🔥 ${weekly.streak} semanas cumpliendo")
-                }
-                IconButton(enabled = weekly.goal > 1, onClick = { onGoalChange(weekly.goal - 1) }) { Icon(Icons.Default.Remove, "Reducir objetivo") }
-                Text("${weekly.goal}", fontWeight = FontWeight.Bold)
-                IconButton(enabled = weekly.goal < 14, onClick = { onGoalChange(weekly.goal + 1) }) { Icon(Icons.Default.Add, "Aumentar objetivo") }
-            }
-            WeeklyBars(weekly.recentWeeks.map { it.workouts }, weekly.goal)
-            Text("Semanas de lunes a domingo. La semana actual no corta la racha mientras aún puede completarse.", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-private fun WeeklyBars(values: List<Int>, goal: Int) {
-    val primary = MaterialTheme.colorScheme.primary
-    val muted = MaterialTheme.colorScheme.onSurface.copy(alpha = .16f)
-    Canvas(Modifier.fillMaxWidth().height(52.dp)) {
-        if (values.isEmpty()) return@Canvas
-        val gap = 5.dp.toPx()
-        val width = (size.width - gap * (values.size - 1)) / values.size
-        val scale = size.height / max(goal, values.maxOrNull() ?: 1).coerceAtLeast(1)
-        values.forEachIndexed { index, value ->
-            val left = index * (width + gap)
-            drawRoundRect(muted, topLeft = Offset(left, 0f), size = androidx.compose.ui.geometry.Size(width, size.height), cornerRadius = androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))
-            val height = value * scale
-            drawRoundRect(primary, topLeft = Offset(left, size.height - height), size = androidx.compose.ui.geometry.Size(width, height), cornerRadius = androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))
-        }
-    }
-}
-
-@Composable
-private fun RecentRecordCard(record: PersonalRecord) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("PR reciente", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(record.exerciseName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("${prLabel(record.type)} · ${formatMetric(record.weightKg)} kg × ${record.reps}")
-        }
-    }
-}
-
-@Composable
-private fun GeneralStatsCard(state: ProgressDashboard) {
-    val stats = state.stats
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Actividad", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatValue(stats.totalWorkouts.toString(), "entrenamientos")
-                StatValue(formatMetric(stats.workoutsPerWeek), "por semana")
-                StatValue(stats.averageDurationMinutes?.let { "$it min" } ?: "—", "duración media")
-                StatValue(stats.effectiveWorkSets.toString(), "series efectivas")
-            }
-            if (stats.muscleDistribution.isNotEmpty()) {
-                Text("Series por músculo principal", style = MaterialTheme.typography.labelLarge)
-                Text(stats.muscleDistribution.take(4).joinToString(" · ") { "${it.muscle} ${it.sets}" }, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatValue(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(76.dp)) {
-        Text(value, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
-@Composable
-private fun ExerciseProgressCard(exercise: ExerciseProgress, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("${exercise.sessionCount} sesiones · última ${formatDate(exercise.lastPerformedAt)}", style = MaterialTheme.typography.bodySmall)
-                }
-                Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = MaterialTheme.colorScheme.primary)
-            }
-            Text(
-                "Mejor peso ${exercise.maxWeightKg?.let { "${formatMetric(it)} kg" } ?: "—"} · e1RM est. ${exercise.bestE1RmKg?.let { "${formatMetric(it)} kg" } ?: "—"}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            exercise.recentE1RmChangeKg?.let {
-                Text("Evolución reciente ${if (it >= 0) "+" else ""}${formatMetric(it)} kg e1RM", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
 
 @Composable
 fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack: () -> Unit) {
@@ -250,11 +94,15 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatValue(item.sessionCount.toString(), "sesiones")
-                    StatValue(item.maxWeightKg?.let { "${formatMetric(it)} kg" } ?: "—", "mejor peso")
-                    StatValue(item.bestWeightKg?.let { "${formatMetric(it)}×${item.bestReps}" } ?: "—", "mejor serie")
-                    StatValue(item.bestE1RmKg?.let { "${formatMetric(it)} kg" } ?: "—", "e1RM est.")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricTile("Sesiones", item.sessionCount.toString(), Modifier.weight(1f))
+                        MetricTile("Mejor peso", item.maxWeightKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricTile("Mejor serie", item.bestWeightKg?.let { "${formatMetric(it)}×${item.bestReps}" } ?: "—", Modifier.weight(1f))
+                        MetricTile("e1RM est.", item.bestE1RmKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f))
+                    }
                 }
             }
             item {

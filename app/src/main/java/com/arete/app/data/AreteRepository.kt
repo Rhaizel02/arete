@@ -25,6 +25,8 @@ class AreteRepository(
 
     suspend fun initialize() = seeder.seedIfEmpty()
 
+    suspend fun getExercise(id: String): ExerciseEntity? = database.exerciseDao().findById(id)
+
     fun searchExercises(query: String): Flow<List<ExerciseEntity>> = database.exerciseDao().search(query.trim())
 
     fun observeRoutine(id: String): Flow<RoutineWithWorkouts?> = database.routineDao().observeRoutine(id)

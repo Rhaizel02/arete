@@ -198,6 +198,31 @@ class SessionRepositoryTest {
         assertEquals(2, database.sessionDao().getExercises(sessionId).size)
     }
 
+    @Test
+    fun movingSetsPreservesTheirIdentityValuesAndCompletionAndClampsBounds() = runTest {
+        seedTemplate()
+        val sessionId = sessions.startPlannedWorkout(WORKOUT_A)
+        val exerciseId = database.sessionDao().getSession(sessionId)!!.orderedExercises().first().exercise.id
+        val original = database.sessionDao().getSets(exerciseId)
+        val work = original.last().copy(weightKg = 82.5, reps = 9, rir = 1)
+        sessions.completeSet(work, timerEnabled = false)
+        val completed = database.sessionDao().getSet(work.id)!!
+
+        sessions.moveSet(exerciseId, work.id, -1)
+        val reordered = database.sessionDao().getSets(exerciseId)
+        assertEquals(listOf(work.id, original.first().id), reordered.map { it.id })
+        assertEquals(listOf(0, 1), reordered.map { it.position })
+        assertEquals(completed.copy(position = 0), reordered.first())
+        assertEquals(original.first().copy(position = 1), reordered.last())
+        sessions.moveSet(exerciseId, work.id, -1)
+        assertEquals(reordered, database.sessionDao().getSets(exerciseId))
+        sessions.moveSet(exerciseId, "missing", 1)
+        assertEquals(reordered, database.sessionDao().getSets(exerciseId))
+        sessions.moveSet(exerciseId, work.id, 1)
+        assertEquals(original.map { it.id }, database.sessionDao().getSets(exerciseId).map { it.id })
+        assertEquals(listOf(0, 1), database.sessionDao().getSets(exerciseId).map { it.position })
+    }
+
     private suspend fun seedExercises() {
         database.exerciseDao().upsertAll(listOf(
             exercise(BENCH, "Press banca", "Bench Press"),

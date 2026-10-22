@@ -18,6 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,9 +32,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.util.Date
 
 @Composable
-fun HistoryScreen(viewModel: AreteViewModel, onOpenSession: (String) -> Unit) {
+fun HistoryScreen(viewModel: AreteViewModel, onOpenSession: (String) -> Unit, onBack: () -> Unit) {
     val sessions by viewModel.completedSessions.collectAsStateWithLifecycle()
-    Scaffold(topBar = { TopAppBar(title = { Text("Historial") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text("Historial") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }) }) { padding ->
         if (sessions.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState("Aún no hay sesiones", "Los entrenamientos finalizados aparecerán aquí.")

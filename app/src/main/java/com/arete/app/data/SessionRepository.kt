@@ -248,6 +248,18 @@ class SessionRepository(
         normalizeSetPositions(set.sessionExerciseId)
     }
 
+    suspend fun moveSet(exerciseId: String, setId: String, delta: Int) = database.withTransaction {
+        val ordered = dao.getSets(exerciseId).toMutableList()
+        val from = ordered.indexOfFirst { it.id == setId }
+        if (from < 0 || ordered.size < 2) return@withTransaction
+        val to = (from + delta).coerceIn(0, ordered.lastIndex)
+        if (from == to) return@withTransaction
+        ordered.add(to, ordered.removeAt(from))
+        // Two passes preserve the unique exercise/position index throughout the transaction.
+        ordered.forEachIndexed { index, item -> dao.updateSetPosition(item.id, -index - 1) }
+        ordered.forEachIndexed { index, item -> dao.updateSetPosition(item.id, index) }
+    }
+
     suspend fun adjustTimer(session: WorkoutSessionEntity, seconds: Int) {
         dao.adjustTimer(session.id, seconds * 1_000L, now())
     }

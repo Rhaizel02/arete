@@ -74,3 +74,9 @@ El contrato sigue en la versión 1 y se documenta en [docs/routine-json-v1.md](d
 Las pruebas locales usan Room real en memoria bajo Robolectric. Además de la cobertura previa, validan el bloqueo de sustitución histórica, e1RM, cada tipo de PR, exclusiones, recálculo tras editar/borrar, límites semanales, rachas, sugerencias, estadísticas y CRUD/tendencia de peso. La prueba instrumental abre una base v1 real, ejecuta la migración a v2 y comprueba tanto los datos previos como las columnas nuevas.
 
 Más detalles: [Bloque 2](docs/block-2-workout-engine.md), [Bloque 3](docs/block-3-progress.md) y [Bloque 4](docs/block-4-v1.md).
+
+## Rediseño UI — Bloque A
+
+Inicio, sesión con un ejercicio destacado y Progreso comparten la nueva identidad light/dark, con Space Grotesk y Hanken Grotesk locales. La navegación principal es Inicio, Rutinas, Progreso y Más; Más reúne Ejercicios, Historial, Actividad y Ajustes. La sesión conserva autosave, descansos y guía técnica, y permite reordenar sus series desde el menú de cada fila.
+
+Referencias, seis capturas reales, excepciones autorizadas y resultados de validación: [Bloque A](docs/design/validation-block-a/README.md). El alcance posterior está delimitado en [STITCH_BACKLOG](docs/product/STITCH_BACKLOG.md).

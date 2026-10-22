@@ -47,6 +47,17 @@ class AretePersistenceTest {
     }
 
     @Test
+    fun guideCanReadArchivedExerciseInstructionsAndLinkWithoutChangingCatalogVisibility() = runTest {
+        repository.initialize()
+        val exercise = database.exerciseDao().findByNameEn("Barbell Bench Press")!!
+        database.exerciseDao().upsert(exercise.copy(isArchived = true, instructions = "Apoya los pies y controla el descenso.", externalUrl = "https://example.org/bench"))
+        val guide = repository.getExercise(exercise.id)!!
+        assertEquals("Apoya los pies y controla el descenso.", guide.instructions)
+        assertEquals("https://example.org/bench", guide.externalUrl)
+        assertTrue(repository.searchExercises("Barbell Bench").first().isEmpty())
+    }
+
+    @Test
     fun routineCrudActivationOrderingAndCascadeAreConsistent() = runTest {
         repository.initialize()
         val routineA = repository.createRoutine("Torso/Pierna")

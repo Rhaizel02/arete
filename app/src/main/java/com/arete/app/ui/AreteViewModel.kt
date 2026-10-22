@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,7 @@ class AreteViewModel(
     private val backup: BackupService
 ) : AndroidViewModel(application) {
     var routineExportPayload: String? = null
+    val sessionSelections = androidx.compose.runtime.mutableStateMapOf<String, Pair<String, Int>>()
     var backupExportPayload: String? = null
     var pendingBackupRestore by androidx.compose.runtime.mutableStateOf<String?>(null)
     val routines = repository.routines.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -86,6 +88,8 @@ class AreteViewModel(
     }
 
     fun observeRoutine(id: String): Flow<RoutineWithWorkouts?> = repository.observeRoutine(id)
+
+    suspend fun getExerciseGuide(id: String): ExerciseEntity? = repository.getExercise(id)
 
     fun observeSession(id: String): Flow<SessionViewData> = sessions.observeSession(id)
 
@@ -128,12 +132,16 @@ class AreteViewModel(
     fun updateSessionSet(set: SessionSetEntity) = launchAction { sessions.updateSet(set) }
 
     fun toggleSessionSetComplete(set: SessionSetEntity) = launchAction {
-        sessions.completeSet(set, restTimerEnabled.value)
+        sessions.completeSet(set, preferences.restTimerEnabled.first())
     }
 
     fun addSessionSet(exerciseId: String) = launchAction { sessions.addSet(exerciseId) }
 
     fun deleteSessionSet(set: SessionSetEntity) = launchAction { sessions.deleteSet(set) }
+
+    fun moveSessionSet(set: SessionSetEntity, delta: Int) = launchAction {
+        sessions.moveSet(set.sessionExerciseId, set.id, delta)
+    }
 
     fun adjustRestTimer(session: WorkoutSessionEntity, seconds: Int) = launchAction {
         sessions.adjustTimer(session, seconds)

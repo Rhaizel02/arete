@@ -12,11 +12,15 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
+import com.arete.app.ui.theme.ActionBlue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -40,6 +44,7 @@ import kotlinx.coroutines.launch
 
 sealed interface AppScreen : java.io.Serializable {
     data object Home : AppScreen
+    data object More : AppScreen
     data object Routines : AppScreen
     data object Catalog : AppScreen
     data object History : AppScreen
@@ -131,10 +136,11 @@ fun AreteApp(viewModel: AreteViewModel) {
 
     val current = stack.last()
     val isRoot = current == AppScreen.Home || current == AppScreen.Routines ||
-        current == AppScreen.Catalog || current == AppScreen.History || current == AppScreen.Progress
+        current == AppScreen.More || current == AppScreen.Progress
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().padding(bottom = if (isRoot) 80.dp else 0.dp)) {
         when (val screen = stack.last()) {
+            AppScreen.More -> MoreScreen { push(it) }
             AppScreen.Home -> HomeScreen(
                 viewModel = viewModel,
                 onContinue = { push(AppScreen.Session(it)) },
@@ -143,7 +149,7 @@ fun AreteApp(viewModel: AreteViewModel) {
                 },
                 onStartFree = { viewModel.startFreeWorkout { push(AppScreen.Session(it)) } },
                 onOpenRoutines = { selectRoot(AppScreen.Routines) },
-                onOpenHistory = { selectRoot(AppScreen.History) },
+                onOpenHistory = { push(AppScreen.History) },
                 onOpenProgress = { selectRoot(AppScreen.Progress) },
                 onOpenActivity = { push(AppScreen.Activity) },
                 onOpenSettings = { push(AppScreen.Settings) }
@@ -151,7 +157,7 @@ fun AreteApp(viewModel: AreteViewModel) {
             AppScreen.Routines -> RoutineListScreen(
                 viewModel = viewModel,
                 onOpenRoutine = { push(AppScreen.RoutineEditor(it)) },
-                onOpenCatalog = { selectRoot(AppScreen.Catalog) },
+                onOpenCatalog = { push(AppScreen.Catalog) },
                 onImport = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                 onExport = { routine ->
                     viewModel.exportRoutine(routine.id) { content ->
@@ -169,7 +175,8 @@ fun AreteApp(viewModel: AreteViewModel) {
             )
             AppScreen.History -> HistoryScreen(
                 viewModel = viewModel,
-                onOpenSession = { push(AppScreen.Session(it)) }
+                onOpenSession = { push(AppScreen.Session(it)) },
+                onBack = ::back
             )
             AppScreen.Progress -> ProgressScreen(
                 viewModel = viewModel,
@@ -283,16 +290,16 @@ fun AreteApp(viewModel: AreteViewModel) {
         }
         }
         if (isRoot) {
-            NavigationBar(Modifier.align(Alignment.BottomCenter)) {
+            NavigationBar(Modifier.align(Alignment.BottomCenter), containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
                 listOf(
                     Triple(AppScreen.Home, Icons.Default.Home, "Inicio"),
                     Triple(AppScreen.Routines, Icons.AutoMirrored.Filled.List, "Rutinas"),
-                    Triple(AppScreen.Catalog, Icons.Default.FitnessCenter, "Ejercicios"),
                     Triple(AppScreen.Progress, Icons.Default.Insights, "Progreso"),
-                    Triple(AppScreen.History, Icons.Default.History, "Historial")
+                    Triple(AppScreen.More, Icons.Default.Tune, "Más")
                 ).forEach { (screen, icon, label) ->
                     NavigationBarItem(
                         selected = current == screen,
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = ActionBlue, selectedTextColor = MaterialTheme.colorScheme.primary, indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                         onClick = { selectRoot(screen) },
                         icon = { Icon(icon, label) },
                         label = { Text(label) }
