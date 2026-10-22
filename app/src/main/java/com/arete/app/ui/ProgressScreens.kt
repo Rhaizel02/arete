@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -78,61 +80,58 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
     val flow = remember(exerciseId) { viewModel.observeExerciseProgress(exerciseId) }
     val progress by flow.collectAsStateWithLifecycle(initialValue = null)
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(progress?.exerciseName ?: "Progreso del ejercicio") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-        )
+        ScreenHeader(progress?.exerciseName ?: "Progreso del ejercicio", onBack, "RENDIMIENTO")
     }) { padding ->
         val item = progress
         if (item == null) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { Text("Sin datos de rendimiento") }
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { EmptyState("Aún sin rendimiento", "Completa una sesión de este ejercicio para consultar su evolución.") }
             return@Scaffold
         }
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        MetricTile("Sesiones", item.sessionCount.toString(), Modifier.weight(1f))
-                        MetricTile("Mejor peso", item.maxWeightKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f))
+                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricTile("Sesiones", item.sessionCount.toString(), Modifier.weight(1f).fillMaxHeight())
+                        MetricTile("Mejor peso", item.maxWeightKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f).fillMaxHeight())
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        MetricTile("Mejor serie", item.bestWeightKg?.let { "${formatMetric(it)}×${item.bestReps}" } ?: "—", Modifier.weight(1f))
-                        MetricTile("e1RM est.", item.bestE1RmKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f))
+                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricTile("Mejor serie", item.bestWeightKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f).fillMaxHeight(), item.bestReps?.let { "$it reps" })
+                        MetricTile("e1RM est.", item.bestE1RmKg?.let { "${formatMetric(it)} kg" } ?: "—", Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Evolución de e1RM estimado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        val values = item.history.asReversed().mapNotNull { it.bestE1RmKg }
-                        if (values.size >= 2) SimpleLineChart(values) else Text("Se necesitan al menos dos sesiones representativas.", style = MaterialTheme.typography.bodySmall)
+                        StaticTrendChart(item.history.mapNotNull { point -> point.bestE1RmKg?.let { ChartValue(point.completedAt, it) } }, "kg est.")
                         Text("Fórmula de Epley; solo series de trabajo completadas de 1 a 12 repeticiones.", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
             if (item.records.isNotEmpty()) item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Récords derivados", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        item.records.forEach { Text("${prLabel(it.type)} · ${formatMetric(it.weightKg)} kg × ${it.reps}") }
+                        item.records.forEach {
+                            Text(prLabel(it.type), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                            Text("${formatMetric(it.weightKg)} kg × ${it.reps} reps · ${uiDate(it.achievedAt)}", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
-            item { Text("Historial de sesiones", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
+            item { SectionHeading("Historial de sesiones") }
             items(item.history, key = { it.sessionId }) { point ->
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                EditorialRow {
                         Column(Modifier.weight(1f)) {
                             Text(formatDate(point.completedAt), fontWeight = FontWeight.Medium)
                             Text(point.bestWeightKg?.let { "Mejor serie ${formatMetric(it)} kg × ${point.bestReps}" } ?: "Serie sin carga externa", style = MaterialTheme.typography.bodySmall)
                         }
                         Text(point.bestE1RmKg?.let { "${formatMetric(it)} kg est." } ?: "—", color = MaterialTheme.colorScheme.primary)
-                    }
                 }
             }
         }
@@ -147,37 +146,35 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
     var deleting by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Peso corporal") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-            )
+            ScreenHeader("Peso corporal", onBack, "MEDIDAS")
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Añadir peso") }
+        bottomBar = {
+            AddAction("Registrar peso") { editing = null; showEditor = true }
         }
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 88.dp),
+            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(state.bodyWeightTrend.latestKg?.let { "${formatMetric(it)} kg" } ?: "Sin registros", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("ÚLTIMO REGISTRO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(state.bodyWeightTrend.latestKg?.let { "${formatMetric(it)} kg" } ?: "Sin registros", style = MaterialTheme.typography.displaySmall)
                         state.bodyWeightTrend.movingAverageKg?.let {
                             val count = minOf(7, state.bodyWeights.size)
                             Text("Media móvil ($count ${if (count == 1) "registro" else "registros"}): ${formatMetric(it)} kg")
                         }
                         state.bodyWeightTrend.recentChangeKg?.let { Text("Cambio reciente: ${if (it >= 0) "+" else ""}${formatMetric(it)} kg", color = MaterialTheme.colorScheme.primary) }
-                        if (state.bodyWeights.size >= 2) SimpleLineChart(state.bodyWeights.map { it.weightKg })
+                        StaticTrendChart(state.bodyWeights.map { ChartValue(it.recordedAt, it.weightKg) }, "kg")
                     }
                 }
             }
-            if (state.bodyWeights.isEmpty()) item { EmptyState("Registra tu peso", "Una entrada rápida en kg basta para empezar a ver la tendencia.") }
+            if (state.bodyWeights.isEmpty()) item { EmptyState("Registra tu peso", "Una entrada rápida en kg basta para empezar a ver la tendencia.", "Añadir peso") { editing = null; showEditor = true } }
+            if (state.bodyWeights.isNotEmpty()) item { SectionHeading("Registros") }
             items(state.bodyWeights.asReversed(), key = { it.id }) { entry ->
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                EditorialRow {
                         Column(Modifier.weight(1f)) {
                             Text("${formatMetric(entry.weightKg)} kg", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(formatDateTime(entry.recordedAt), style = MaterialTheme.typography.bodySmall)
@@ -185,7 +182,6 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
                         }
                         IconButton(onClick = { editing = entry; showEditor = true }) { Icon(Icons.Default.Edit, "Editar") }
                         IconButton(onClick = { deleting = entry }) { Icon(Icons.Default.DeleteOutline, "Eliminar") }
-                    }
                 }
             }
         }
@@ -218,27 +214,28 @@ private fun BodyWeightEditor(
         onDismissRequest = onDismiss,
         title = { Text(if (entry == null) "Añadir peso" else "Editar peso") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                AreteField(
                     value = weight,
                     onValueChange = { weight = it.filter { char -> char.isDigit() || char == ',' || char == '.' } },
                     label = { Text("Peso (kg)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
-                OutlinedButton(onClick = { showDatePicker = true }, Modifier.fillMaxWidth()) {
+                SecondaryAction(onClick = { showDatePicker = true }, Modifier.fillMaxWidth()) {
                     Text("Fecha · ${formatDate(PlanningDates.timestampFromPickerDate(selectedDate))}")
                 }
-                OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Nota opcional") })
+                AreteField(value = notes, onValueChange = { notes = it }, label = { Text("Nota opcional") })
             }
         },
         confirmButton = {
-            Button(
+            PrimaryAction(
                 enabled = parsed != null && parsed in 1.0..1_000.0,
                 onClick = { onSave(parsed!!, notes, PlanningDates.timestampFromPickerDate(selectedDate)) }
             ) { Text("Guardar") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     )
     if (showDatePicker) {
         val pickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
@@ -252,24 +249,6 @@ private fun BodyWeightEditor(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
         ) { DatePicker(state = pickerState) }
-    }
-}
-
-@Composable
-private fun SimpleLineChart(values: List<Double>) {
-    val primary = MaterialTheme.colorScheme.primary
-    val grid = MaterialTheme.colorScheme.onSurface.copy(alpha = .15f)
-    Canvas(Modifier.fillMaxWidth().height(150.dp).padding(vertical = 8.dp)) {
-        if (values.size < 2) return@Canvas
-        val min = values.minOrNull()!!
-        val max = values.maxOrNull()!!
-        val range = (max - min).takeIf { it > 0.0 } ?: 1.0
-        drawLine(grid, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.dp.toPx())
-        val points = values.mapIndexed { index, value ->
-            Offset(index * size.width / (values.lastIndex), size.height - ((value - min) / range * size.height).toFloat())
-        }
-        points.zipWithNext().forEach { (a, b) -> drawLine(primary, a, b, 3.dp.toPx(), cap = StrokeCap.Round) }
-        points.forEach { drawCircle(primary, 4.dp.toPx(), it); drawCircle(Color.White, 2.dp.toPx(), it, style = androidx.compose.ui.graphics.drawscope.Fill) }
     }
 }
 

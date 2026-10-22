@@ -80,3 +80,9 @@ Más detalles: [Bloque 2](docs/block-2-workout-engine.md), [Bloque 3](docs/block
 Inicio, sesión con un ejercicio destacado y Progreso comparten la nueva identidad light/dark, con Space Grotesk y Hanken Grotesk locales. La navegación principal es Inicio, Rutinas, Progreso y Más; Más reúne Ejercicios, Historial, Actividad y Ajustes. La sesión conserva autosave, descansos y guía técnica, y permite reordenar sus series desde el menú de cada fila.
 
 Referencias, seis capturas reales, excepciones autorizadas y resultados de validación: [Bloque A](docs/design/validation-block-a/README.md). El alcance posterior está delimitado en [STITCH_BACKLOG](docs/product/STITCH_BACKLOG.md).
+
+## Rediseño UI — Bloque B
+
+La identidad del Bloque A se extiende a rutinas, workouts, prescripciones, catálogo y fichas, ejercicios personalizados, historial, actividad, planificación, ajustes, detalle de progreso y peso corporal. Listas compactas con separadores, campos tonales y acciones inferiores compartidas mantienen los flujos originales. Home reduce su encabezado decorativo y la última ejecución de sesión muestra kg y reps explícitos por serie.
+
+Validación funcional, compatibilidad y capturas reales: [Bloque B](docs/design/validation-block-b/README.md).

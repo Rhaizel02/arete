@@ -1,13 +1,24 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.arete.app.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
@@ -85,3 +96,72 @@ fun StaticTrendChart(points: List<ChartValue>, unit: String, modifier: Modifier 
 
 fun uiNumber(value: Double): String = String.format(Locale.forLanguageTag("es-ES"), "%.2f", value).trimEnd('0').trimEnd(',')
 fun uiDate(timestamp: Long): String = DateFormat.format("dd MMM yyyy", Date(timestamp)).toString()
+
+@Composable
+fun ScreenHeader(title: String, onBack: (() -> Unit)? = null, subtitle: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
+    TopAppBar(
+        title = { Column {
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title, style = MaterialTheme.typography.headlineSmall)
+        } },
+        navigationIcon = { if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+    )
+}
+
+/** A flat, separated row: lists keep their density instead of becoming a stack of cards. */
+@Composable
+fun EditorialRow(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable RowScope.() -> Unit) {
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 64.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, content = content)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))
+    }
+}
+
+@Composable
+fun StatusLabel(text: String, positive: Boolean = false) {
+    val color = if (positive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    Surface(shape = MaterialTheme.shapes.small, color = color.copy(alpha = .1f), contentColor = color) {
+        Text(text, Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+fun PrimaryAction(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable RowScope.() -> Unit) {
+    Button(onClick, modifier.heightIn(min = 48.dp), enabled = enabled, shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.buttonColors(containerColor = ActionBlue, contentColor = Color.White), content = content)
+}
+
+@Composable
+fun SecondaryAction(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable RowScope.() -> Unit) {
+    OutlinedButton(onClick, modifier.heightIn(min = 48.dp), enabled = enabled, shape = MaterialTheme.shapes.medium, content = content)
+}
+
+@Composable
+fun AddAction(label: String, onClick: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.background) {
+        PrimaryAction(onClick = onClick, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
+            Icon(Icons.Default.Add, null)
+            Spacer(Modifier.width(8.dp))
+            Text(label)
+        }
+    }
+}
+
+@Composable
+fun AreteField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier,
+    label: (@Composable () -> Unit)? = null, placeholder: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null, singleLine: Boolean = false, minLines: Int = 1,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default) {
+    val focus = LocalFocusManager.current
+    OutlinedTextField(value, onValueChange, modifier, label = label, placeholder = placeholder, leadingIcon = leadingIcon,
+        singleLine = singleLine, minLines = minLines, shape = MaterialTheme.shapes.small,
+        keyboardOptions = if (singleLine && keyboardOptions.imeAction == ImeAction.Default) keyboardOptions.copy(imeAction = ImeAction.Next) else keyboardOptions,
+        keyboardActions = KeyboardActions(onNext = { focus.moveFocus(FocusDirection.Next) }, onDone = { focus.clearFocus() }),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f)))
+}

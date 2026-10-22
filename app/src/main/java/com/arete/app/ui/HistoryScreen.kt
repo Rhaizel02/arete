@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +35,7 @@ import java.util.Date
 @Composable
 fun HistoryScreen(viewModel: AreteViewModel, onOpenSession: (String) -> Unit, onBack: () -> Unit) {
     val sessions by viewModel.completedSessions.collectAsStateWithLifecycle()
-    Scaffold(topBar = { TopAppBar(title = { Text("Historial") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }) }) { padding ->
+    Scaffold(topBar = { ScreenHeader("Historial", onBack, "ENTRENAMIENTOS") }) { padding ->
         if (sessions.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState("Aún no hay sesiones", "Los entrenamientos finalizados aparecerán aquí.")
@@ -43,12 +44,14 @@ fun HistoryScreen(viewModel: AreteViewModel, onOpenSession: (String) -> Unit, on
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
+                item { Text("${sessions.size} ${if (sessions.size == 1) "sesión completada" else "sesiones completadas"}", Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 items(sessions, key = { it.session.id }) { details ->
                     val completedSets = details.exercises.sumOf { it.sets.count { set -> set.isCompleted } }
-                    Card(Modifier.fillMaxWidth().clickable { onOpenSession(details.session.id) }) {
-                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    EditorialRow(onClick = { onOpenSession(details.session.id) }) {
+                        Icon(Icons.Default.CheckCircle, null, Modifier.padding(end = 12.dp), tint = MaterialTheme.colorScheme.secondary)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(details.session.workoutNameSnapshot, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(details.session.routineNameSnapshot ?: "Entrenamiento libre", color = MaterialTheme.colorScheme.primary)
                             Text(

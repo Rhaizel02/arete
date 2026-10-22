@@ -2,6 +2,7 @@ package com.arete.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,13 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -39,18 +47,20 @@ fun NameDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
+            AreteField(
                 value = value,
                 onValueChange = { value = it },
                 label = { Text(label) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
         },
         confirmButton = {
-            Button(enabled = value.isNotBlank(), onClick = { onConfirm(value.trim()) }) { Text("Guardar") }
+            PrimaryAction(enabled = value.isNotBlank(), onClick = { onConfirm(value.trim()) }) { Text("Guardar") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     )
 }
 
@@ -60,8 +70,9 @@ fun ConfirmDialog(title: String, message: String, onDismiss: () -> Unit, onConfi
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(message) },
-        confirmButton = { Button(onClick = onConfirm) { Text("Eliminar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        confirmButton = { Button(onClick = onConfirm, shape = MaterialTheme.shapes.medium, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer)) { Text("Eliminar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     )
 }
 
@@ -74,30 +85,28 @@ fun ReorderActions(
     onEdit: (() -> Unit)? = null,
     onDelete: () -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.End) {
-        IconButton(enabled = canMoveUp, onClick = onMoveUp) {
-            Icon(Icons.Default.KeyboardArrowUp, "Subir")
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, "Orden y acciones") }
+        DropdownMenu(expanded, { expanded = false }) {
+            DropdownMenuItem(text = { Text("Subir") }, enabled = canMoveUp, onClick = { expanded = false; onMoveUp() })
+            DropdownMenuItem(text = { Text("Bajar") }, enabled = canMoveDown, onClick = { expanded = false; onMoveDown() })
+            if (onEdit != null) DropdownMenuItem(text = { Text("Editar") }, onClick = { expanded = false; onEdit() })
+            DropdownMenuItem(text = { Text("Eliminar") }, onClick = { expanded = false; onDelete() })
         }
-        IconButton(enabled = canMoveDown, onClick = onMoveDown) {
-            Icon(Icons.Default.KeyboardArrowDown, "Bajar")
-        }
-        if (onEdit != null) {
-            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Editar") }
-        }
-        IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, "Eliminar") }
     }
 }
 
 @Composable
 fun EmptyState(title: String, body: String, action: String? = null, onAction: (() -> Unit)? = null) {
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 64.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(title, style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
-        Text(body, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge)
+        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (action != null && onAction != null) {
-            OutlinedButton(onClick = onAction) { Text(action) }
+            SecondaryAction(onClick = onAction) { Text(action) }
         }
     }
 }

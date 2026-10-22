@@ -8,6 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -92,23 +99,18 @@ private fun ExerciseCatalogScaffold(
 ) {
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val query by viewModel.exerciseQuery.collectAsStateWithLifecycle()
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-            )
+            ScreenHeader(title, onBack)
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateCustom,
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("Personalizado") }
-            )
+        bottomBar = {
+            AddAction("Personalizado", onCreateCustom)
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
+            AreteField(
                 value = query,
                 onValueChange = { viewModel.exerciseQuery.value = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -122,14 +124,14 @@ private fun ExerciseCatalogScaffold(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     items(exercises, key = { it.id }) { exercise ->
                         ExerciseRow(
                             exercise = exercise,
                             selectionMode = selectionMode,
-                            onClick = { onExercise(exercise.id) },
+                            onClick = { if (selectionMode) onExercise(exercise.id) else selectedId = exercise.id },
                             onEdit = { onEditCustom(exercise.id) }
                         )
                     }
@@ -137,6 +139,7 @@ private fun ExerciseCatalogScaffold(
             }
         }
     }
+    selectedId?.let { id -> ExerciseGuideSheet(id, viewModel, title = "Ficha del ejercicio", onEdit = { selectedId = null; onEditCustom(it) }) { selectedId = null } }
 }
 
 @Composable
@@ -146,10 +149,7 @@ private fun ExerciseRow(
     onClick: () -> Unit,
     onEdit: () -> Unit
 ) {
-    Card(
-        Modifier.fillMaxWidth().then(if (selectionMode) Modifier.clickable(onClick = onClick) else Modifier)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    EditorialRow(onClick = onClick) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(exercise.nameEs, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 if (exercise.nameEn.isNotBlank()) Text(
@@ -167,8 +167,7 @@ private fun ExerciseRow(
                 Icon(Icons.Default.Add, "Añadir")
             } else if (exercise.isCustom) {
                 IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Editar ejercicio") }
-            }
-        }
+            } else Icon(Icons.Default.ChevronRight, "Ver ficha")
     }
 }
 
@@ -203,12 +202,12 @@ fun CustomExerciseScreen(
 
     val valid = nameEs.isNotBlank() && muscle.isNotBlank() && equipment.isNotBlank()
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
-            TopAppBar(
-                title = { Text(if (exerciseId == null) "Nuevo ejercicio" else "Editar ejercicio") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
-                actions = {
-                    TextButton(
+            ScreenHeader(if (exerciseId == null) "Nuevo ejercicio" else "Editar ejercicio", onBack, "PERSONALIZADO")
+        },
+        bottomBar = { Surface(color = MaterialTheme.colorScheme.background) {
+            PrimaryAction(modifier = Modifier.navigationBarsPadding().padding(16.dp).fillMaxWidth(),
                         enabled = valid,
                         onClick = {
                             viewModel.saveCustomExercise(
@@ -217,24 +216,23 @@ fun CustomExerciseScreen(
                                 onSaved
                             )
                         }
-                    ) { Text("Guardar") }
-                }
-            )
-        }
+                    ) { Text("Guardar ejercicio") }
+        } }
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Text("Identidad", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
-            item { OutlinedTextField(nameEs, { nameEs = it }, Modifier.fillMaxWidth(), label = { Text("Nombre en español *") }, singleLine = true) }
-            item { OutlinedTextField(nameEn, { nameEn = it }, Modifier.fillMaxWidth(), label = { Text("Nombre en inglés") }, singleLine = true) }
-            item { Text("Clasificación", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
-            item { OutlinedTextField(muscle, { muscle = it }, Modifier.fillMaxWidth(), label = { Text("Músculo principal *") }, singleLine = true) }
-            item { OutlinedTextField(secondary, { secondary = it }, Modifier.fillMaxWidth(), label = { Text("Músculos secundarios (separados por coma)") }) }
-            item { OutlinedTextField(equipment, { equipment = it }, Modifier.fillMaxWidth(), label = { Text("Equipamiento *") }, singleLine = true) }
-            item { OutlinedTextField(instructions, { instructions = it }, Modifier.fillMaxWidth(), label = { Text("Instrucciones") }, minLines = 4) }
+            item { SectionHeading("Identidad"); Text("* Obligatorio", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item { AreteField(nameEs, { nameEs = it }, Modifier.fillMaxWidth(), label = { Text("Nombre en español *") }, singleLine = true) }
+            item { AreteField(nameEn, { nameEn = it }, Modifier.fillMaxWidth(), label = { Text("Nombre en inglés") }, singleLine = true) }
+            item { SectionHeading("Clasificación") }
+            item { AreteField(muscle, { muscle = it }, Modifier.fillMaxWidth(), label = { Text("Músculo principal *") }, singleLine = true) }
+            item { AreteField(secondary, { secondary = it }, Modifier.fillMaxWidth(), label = { Text("Músculos secundarios, separados por coma") }) }
+            item { AreteField(equipment, { equipment = it }, Modifier.fillMaxWidth(), label = { Text("Equipamiento *") }, singleLine = true) }
+            item { SectionHeading("Técnica") }
+            item { AreteField(instructions, { instructions = it }, Modifier.fillMaxWidth(), label = { Text("Instrucciones") }, minLines = 4) }
         }
     }
 }

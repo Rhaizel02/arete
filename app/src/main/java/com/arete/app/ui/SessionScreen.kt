@@ -92,7 +92,7 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
     }, bottomBar = {
         Surface(color = MaterialTheme.colorScheme.surfaceContainerLowest) {
             Row(Modifier.navigationBarsPadding().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(enabled = index > 0, onClick = { select(index - 1) }, modifier = Modifier.heightIn(min = 52.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Ejercicio anterior") }
+                SecondaryAction(enabled = index > 0, onClick = { select(index - 1) }, modifier = Modifier.heightIn(min = 52.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Ejercicio anterior") }
                 Button(onClick = {
                     if (index < exercises.lastIndex) select(index + 1) else if (active) finish = true else onBack()
                 }, modifier = Modifier.weight(1f).heightIn(min = 52.dp), shape = MaterialTheme.shapes.medium,
@@ -177,7 +177,7 @@ private fun SessionExerciseCard(details: SessionExerciseWithSets, last: List<Las
                 Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("ÚLTIMA SESIÓN" + (last.firstOrNull()?.let { " · ${uiDate(it.completedAt)}" } ?: ""), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val work = last.filterNot { it.isWarmupSnapshot }
-                    Text(if (work.isEmpty()) "Sin rendimiento anterior" else work.joinToString(" · ") { "${it.weightKg?.let(::uiNumber) ?: "—"} × ${it.reps ?: "—"}${if (it.isFailure) " F" else ""}" } + " kg/reps", style = MaterialTheme.typography.bodyMedium)
+                    Text(if (work.isEmpty()) "Sin rendimiento anterior" else work.joinToString(" · ") { "${it.weightKg?.let(::uiNumber) ?: "—"} kg × ${it.reps ?: "—"} reps${if (it.isFailure) " · fallo" else ""}" }, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -190,7 +190,7 @@ private fun SessionExerciseCard(details: SessionExerciseWithSets, last: List<Las
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(onClick = { viewModel.addSessionSet(exercise.id) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.primary)) { Icon(Icons.Default.Add, null); Text("Añadir serie") }
-            OutlinedButton(onClick = if (hasCompleted) onAddReplacement else onSubstitute, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(if (hasCompleted) "Añadir sustituto" else "Sustituir") }
+            SecondaryAction(onClick = if (hasCompleted) onAddReplacement else onSubstitute, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(if (hasCompleted) "Añadir sustituto" else "Sustituir") }
         }
         if (hasCompleted) Text("Las series completadas conservan su ejercicio original.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -274,18 +274,27 @@ private fun NotesDialog(title: String, initial: String, onDismiss: () -> Unit, o
 }
 
 @Composable
-private fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, onDismiss: () -> Unit) {
+fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, title: String = "Guía técnica", onEdit: ((String) -> Unit)? = null, onDismiss: () -> Unit) {
     val exercise by produceState<ExerciseEntity?>(null, id) { value = id?.let { viewModel.getExerciseGuide(it) } }
     val context = LocalContext.current
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Guía técnica", style = MaterialTheme.typography.headlineSmall)
+            Text(title, style = MaterialTheme.typography.headlineSmall)
             exercise?.let { Text(it.nameEs, style = MaterialTheme.typography.titleMedium) }
+            exercise?.let {
+                Text("${it.primaryMuscle} · ${it.equipment}", color = MaterialTheme.colorScheme.primary)
+                if (it.nameEn.isNotBlank()) Text(it.nameEn, style = MaterialTheme.typography.bodySmall)
+                if (it.secondaryMuscles.isNotEmpty()) Text("Secundarios: ${it.secondaryMuscles.joinToString()}", style = MaterialTheme.typography.bodySmall)
+            }
+            SectionHeading("Instrucciones")
             Text(exercise?.instructions?.takeIf { it.isNotBlank() } ?: "No hay instrucciones guardadas para este ejercicio.")
             exercise?.externalUrl?.let { url ->
-                if (Uri.parse(url).scheme?.lowercase() in listOf("https", "http")) OutlinedButton(onClick = {
+                if (Uri.parse(url).scheme?.lowercase() in listOf("https", "http")) SecondaryAction(onClick = {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.onFailure { viewModel.showMessage("No se pudo abrir el enlace") }
                 }) { Text("Abrir guía externa") }
+            }
+            exercise?.takeIf { it.isCustom }?.let { custom ->
+                if (onEdit != null) PrimaryAction(onClick = { onEdit(custom.id) }) { Text("Editar ejercicio") }
             }
             Spacer(Modifier.height(24.dp))
         }

@@ -323,7 +323,8 @@ fun AreteApp(viewModel: AreteViewModel) {
                     viewModel.restoreBackup(raw) { selectRoot(AppScreen.Home) }
                 }) { Text("Reemplazar y restaurar") }
             },
-            dismissButton = { TextButton(onClick = { viewModel.pendingBackupRestore = null }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { viewModel.pendingBackupRestore = null }) { Text("Cancelar") } },
+            shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 }

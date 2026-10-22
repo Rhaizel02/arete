@@ -26,15 +26,10 @@ fun HomeScreen(
     val planning by viewModel.planningState.collectAsStateWithLifecycle()
     Scaffold(topBar = {
         TopAppBar(title = { Column {
-            Text("ARETE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Inicio", style = MaterialTheme.typography.headlineSmall)
+            Text("Arete", style = MaterialTheme.typography.headlineSmall)
         } }, actions = { IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Tune, "Ajustes") } })
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Tu próxima versión", style = MaterialTheme.typography.headlineLarge)
-                Text("Disciplina hoy, resultados mañana.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } }
             item {
                 val active = training?.activeSession
                 val next = training?.nextWorkout
@@ -90,7 +85,7 @@ fun HomeScreen(
                     when {
                         today.completedSession != null -> { Text("Entrenamiento completado", style = MaterialTheme.typography.titleMedium); Text(today.completedSession.workoutNameSnapshot) }
                         today.skipped != null -> { Text("Hoy no entreno", style = MaterialTheme.typography.titleMedium); Text(today.skipped.workoutNameSnapshot); TextButton(onClick = { viewModel.undoSkippedDay(today.skipped) }) { Text("Deshacer") } }
-                        today.plannedWorkout != null -> { Text("Planificado · ${today.plannedWorkout.name}", style = MaterialTheme.typography.titleMedium); Text("La secuencia de tu rutina se mantiene.", style = MaterialTheme.typography.bodySmall); OutlinedButton(onClick = viewModel::skipToday) { Text("Hoy no entreno") } }
+                        today.plannedWorkout != null -> { Text("Planificado · ${today.plannedWorkout.name}", style = MaterialTheme.typography.titleMedium); Text("La secuencia de tu rutina se mantiene.", style = MaterialTheme.typography.bodySmall); SecondaryAction(onClick = viewModel::skipToday) { Text("Hoy no entreno") } }
                         else -> Text("Sin planificación para hoy", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

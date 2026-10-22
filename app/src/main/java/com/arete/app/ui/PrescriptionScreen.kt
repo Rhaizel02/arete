@@ -6,6 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.material3.Surface
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -65,6 +73,7 @@ fun PrescriptionScreen(
     var error by remember(itemId) { mutableStateOf<String?>(null) }
     var initialized by remember(itemId) { mutableStateOf(false) }
     val sets = remember(itemId) { mutableStateListOf<SetEditorState>() }
+    val focus = LocalFocusManager.current
 
     LaunchedEffect(details?.item?.id) {
         if (!initialized && details != null) {
@@ -107,13 +116,16 @@ fun PrescriptionScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
-            TopAppBar(
-                title = { Text(details?.exercise?.nameEs ?: "Configurar ejercicio") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
-                actions = { TextButton(onClick = ::save) { Text("Guardar") } }
-            )
-        }
+            ScreenHeader(details?.exercise?.nameEs ?: "Configurar ejercicio", onBack, "PRESCRIPCIÓN")
+        },
+        bottomBar = { Surface(color = MaterialTheme.colorScheme.background) {
+            Column(Modifier.navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                PrimaryAction(onClick = ::save, modifier = Modifier.fillMaxWidth()) { Text("Guardar configuración") }
+            }
+        } }
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
@@ -126,11 +138,13 @@ fun PrescriptionScreen(
                     number = index + 1,
                     state = set,
                     onChange = { sets[index] = it },
-                    onDelete = { if (sets.size > 1) sets.removeAt(index) }
+                    onDelete = { if (sets.size > 1) sets.removeAt(index) },
+                    total = sets.size,
+                    onMove = { delta -> focus.clearFocus(); moveEditorItem(sets, index, delta) }
                 )
             }
             item {
-                Button(onClick = { sets += (sets.lastOrNull() ?: SetEditorState()) }) {
+                SecondaryAction(onClick = { sets += (sets.lastOrNull() ?: SetEditorState()) }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Add, null)
                     Text("Añadir serie", Modifier.padding(start = 8.dp))
                 }
@@ -138,21 +152,20 @@ fun PrescriptionScreen(
             item { Text("Descanso y progresión", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    AreteField(
                         rest, { rest = it.filter(Char::isDigit) }, Modifier.weight(1f),
                         label = { Text("Descanso (s)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true
                     )
-                    OutlinedTextField(
+                    AreteField(
                         increment, { increment = it }, Modifier.weight(1f),
                         label = { Text("Incremento kg") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true
                     )
                 }
             }
-            item { OutlinedTextField(groupId, { groupId = it }, Modifier.fillMaxWidth(), label = { Text("Grupo (p. ej. A1, circuito-1)") }, singleLine = true) }
-            item { OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text("Notas") }, minLines = 3) }
-            error?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
+            item { AreteField(groupId, { groupId = it }, Modifier.fillMaxWidth(), label = { Text("Grupo (p. ej. A1, circuito-1)") }, singleLine = true) }
+            item { AreteField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text("Notas") }, minLines = 3) }
         }
     }
 }
@@ -162,40 +175,33 @@ private fun SetEditorCard(
     number: Int,
     state: SetEditorState,
     onChange: (SetEditorState) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    total: Int,
+    onMove: (Int) -> Unit
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Serie $number", style = MaterialTheme.typography.titleSmall)
-                IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, "Eliminar serie") }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = state.type == SetType.WARMUP,
-                    onClick = { onChange(state.copy(type = SetType.WARMUP)) },
-                    label = { Text("Calentamiento") }
-                )
-                FilterChip(
-                    selected = state.type == SetType.WORK,
-                    onClick = { onChange(state.copy(type = SetType.WORK)) },
-                    label = { Text("Trabajo") }
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = !state.isRange,
-                    onClick = { onChange(state.copy(isRange = false, max = state.min)) },
-                    label = { Text("Reps exactas") }
-                )
-                FilterChip(
-                    selected = state.isRange,
-                    onClick = { onChange(state.copy(isRange = true)) },
-                    label = { Text("Rango") }
-                )
+    var typeMenu by remember { mutableStateOf(false) }
+    var rangeMenu by remember { mutableStateOf(false) }
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("$number", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                Box {
+                    TextButton(onClick = { typeMenu = true }) { Text(if (state.type == SetType.WARMUP) "Calent. ▾" else "Trabajo ▾") }
+                    DropdownMenu(typeMenu, { typeMenu = false }) {
+                        SetType.entries.forEach { type -> DropdownMenuItem(text = { Text(if (type == SetType.WARMUP) "Calentamiento" else "Trabajo") }, onClick = { typeMenu = false; onChange(state.copy(type = type)) }) }
+                    }
+                }
+                Box {
+                    TextButton(onClick = { rangeMenu = true }) { Text(if (state.isRange) "Rango ▾" else "Exactas ▾") }
+                    DropdownMenu(rangeMenu, { rangeMenu = false }) {
+                        DropdownMenuItem(text = { Text("Reps exactas") }, onClick = { rangeMenu = false; onChange(state.copy(isRange = false, max = state.min)) })
+                        DropdownMenuItem(text = { Text("Rango") }, onClick = { rangeMenu = false; onChange(state.copy(isRange = true)) })
+                    }
+                }
+                ReorderActions(number > 1, number < total, { onMove(-1) }, { onMove(1) }, onDelete = onDelete)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                AreteField(
                     state.min,
                     { onChange(state.copy(min = it.filter(Char::isDigit), max = if (state.isRange) state.max else it.filter(Char::isDigit))) },
                     Modifier.weight(1f),
@@ -203,7 +209,7 @@ private fun SetEditorCard(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
-                if (state.isRange) OutlinedTextField(
+                if (state.isRange) AreteField(
                     state.max,
                     { onChange(state.copy(max = it.filter(Char::isDigit))) },
                     Modifier.weight(1f),

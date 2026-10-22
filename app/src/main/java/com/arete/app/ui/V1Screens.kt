@@ -13,6 +13,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -85,20 +94,17 @@ fun SettingsScreen(
     }
 
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Ajustes") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-        )
+        ScreenHeader("Ajustes", onBack, "ARETE · A TU MEDIDA")
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Preferencias", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SectionHeading("Entrenamiento")
                         SettingSwitch("Temporizador de descanso", settings.restTimerEnabled, viewModel::setRestTimerEnabled)
                         SettingSwitch("Vibración", settings.vibrationEnabled, viewModel::setVibrationEnabled)
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -106,27 +112,27 @@ fun SettingsScreen(
                                 Text("Tema")
                                 Text(themeLabel(settings.themeMode), style = MaterialTheme.typography.bodySmall)
                             }
-                            OutlinedButton(onClick = viewModel::cycleTheme) { Text("Cambiar") }
+                            TextButton(onClick = viewModel::cycleTheme) { Text("Cambiar tema") }
                         }
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text("Objetivo semanal", Modifier.weight(1f))
-                            TextButton(enabled = settings.weeklyGoal > 1, onClick = { viewModel.setWeeklyGoal(settings.weeklyGoal - 1) }) { Text("−") }
-                            Text("${settings.weeklyGoal} sesiones", fontWeight = FontWeight.Medium)
-                            TextButton(enabled = settings.weeklyGoal < 14, onClick = { viewModel.setWeeklyGoal(settings.weeklyGoal + 1) }) { Text("+") }
+                            Column(Modifier.weight(1f)) { Text("Objetivo semanal"); Text("Sesiones por semana", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            IconButton(enabled = settings.weeklyGoal > 1, onClick = { viewModel.setWeeklyGoal(settings.weeklyGoal - 1) }) { Icon(Icons.Default.Remove, "Reducir objetivo") }
+                            Text("${settings.weeklyGoal}", style = MaterialTheme.typography.titleLarge)
+                            IconButton(enabled = settings.weeklyGoal < 14, onClick = { viewModel.setWeeklyGoal(settings.weeklyGoal + 1) }) { Icon(Icons.Default.Add, "Aumentar objetivo") }
                         }
                     }
                 }
             }
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Planificación y recordatorios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SectionHeading("Semana y recordatorios")
                         Text(planning.routineName?.let { "$it · ${planning.weeklyPlan.size} días planificados" } ?: "Activa una rutina para planificarla", style = MaterialTheme.typography.bodySmall)
-                        OutlinedButton(onClick = onOpenPlanning, enabled = planning.workouts.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                        SecondaryAction(onClick = onOpenPlanning, enabled = planning.workouts.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
                             Text("Configurar semana")
                         }
                         SettingSwitch("Recordatorios en días planificados", settings.remindersEnabled, ::setReminders)
-                        OutlinedButton(onClick = { showTimePicker = true }, enabled = settings.remindersEnabled, modifier = Modifier.fillMaxWidth()) {
+                        SecondaryAction(onClick = { showTimePicker = true }, enabled = settings.remindersEnabled, modifier = Modifier.fillMaxWidth()) {
                             Text("Hora · %02d:%02d".format(settings.reminderHour, settings.reminderMinute))
                         }
                         Text("Android puede retrasar el aviso por ahorro de batería. Nunca se avisa si ya entrenaste, omitiste el día o hay una sesión en curso.", style = MaterialTheme.typography.bodySmall)
@@ -134,12 +140,13 @@ fun SettingsScreen(
                 }
             }
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Datos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                TonalCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SectionHeading("Tus datos")
                         Text("Routine JSON comparte una rutina. Backup JSON reemplaza y restaura toda la aplicación.", style = MaterialTheme.typography.bodySmall)
-                        Button(onClick = onExportBackup, Modifier.fillMaxWidth()) { Text("Exportar backup completo") }
-                        OutlinedButton(onClick = onRestoreBackup, Modifier.fillMaxWidth()) { Text("Restaurar backup") }
+                        PrimaryAction(onClick = onExportBackup, modifier = Modifier.fillMaxWidth()) { Text("Exportar backup completo") }
+                        SecondaryAction(onClick = onRestoreBackup, Modifier.fillMaxWidth()) { Text("Restaurar backup") }
+                        Text("Restaurar reemplaza todos los datos locales. Se pedirá confirmación.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -157,9 +164,9 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -171,7 +178,8 @@ private fun ReminderTimeDialog(initialHour: Int, initialMinute: Int, onDismiss: 
         title = { Text("Hora del recordatorio") },
         text = { TimeInput(state) },
         confirmButton = { TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text("Guardar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     )
 }
 
@@ -179,29 +187,26 @@ private fun ReminderTimeDialog(initialHour: Int, initialMinute: Int, onDismiss: 
 fun WeeklyPlanningScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
     val state by viewModel.planningState.collectAsStateWithLifecycle()
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Planificación semanal") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-        )
+        ScreenHeader("Tu semana", onBack, "PLANIFICACIÓN")
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             item {
-                Text("La planificación orienta días y avisos. El próximo workout continúa siendo siempre el siguiente de la secuencia.", style = MaterialTheme.typography.bodyMedium)
+                Text(state.routineName ?: "Planifica tus entrenamientos", style = MaterialTheme.typography.titleLarge)
+                Text("Asigna tus días. La secuencia real de la rutina no cambia.", Modifier.padding(top = 4.dp, bottom = 16.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (state.workouts.isEmpty()) item { EmptyState("Sin rutina activa", "Activa una rutina antes de configurar la semana.") }
             items(WEEK_DAYS, key = { it.first }) { (day, label) ->
                 var expanded by remember(day) { mutableStateOf(false) }
                 val selectedId = state.weeklyPlan.firstOrNull { it.dayOfWeek == day }?.workoutId
                 val selected = state.workouts.firstOrNull { it.id == selectedId }
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(label, Modifier.weight(1f), fontWeight = FontWeight.Medium)
-                        Column {
-                            OutlinedButton(onClick = { expanded = true }) { Text(selected?.name ?: "Sin plan") }
+                EditorialRow {
+                        Text(label, Modifier.weight(.4f), style = MaterialTheme.typography.titleMedium)
+                        Column(Modifier.weight(.6f), horizontalAlignment = Alignment.End) {
+                            TextButton(onClick = { expanded = true }, enabled = state.workouts.isNotEmpty(), modifier = Modifier.semantics { contentDescription = "Plan de $label" }) { Text((selected?.name ?: "Descanso") + " ▾") }
                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                 DropdownMenuItem(text = { Text("Sin planificación") }, onClick = {
                                     expanded = false
@@ -215,7 +220,6 @@ fun WeeklyPlanningScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
                                 }
                             }
                         }
-                    }
                 }
             }
         }
@@ -230,17 +234,14 @@ fun ActivityScreen(
 ) {
     val state by viewModel.planningState.collectAsStateWithLifecycle()
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Actividad") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
-        )
+        ScreenHeader("Actividad", onBack, "CONSTANCIA SEMANAL")
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            item { Text("Últimos 14 días y próximos 7", style = MaterialTheme.typography.bodyMedium) }
+            item { Text("Últimos 14 días y próximos 7", Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             items(state.activity.sortedByDescending { it.timestamp }, key = { it.epochDay }) { day ->
                 ActivityDayCard(day, onOpenSession) { skipped -> viewModel.undoSkippedDay(skipped) }
             }
@@ -255,17 +256,7 @@ private fun ActivityDayCard(
     onUndoSkip: (com.arete.app.data.local.SkippedPlannedWorkoutEntity) -> Unit
 ) {
     val clickable = day.completedSessions.isNotEmpty()
-    Card(
-        Modifier.fillMaxWidth().then(if (clickable) Modifier.clickable { onOpenSession(day.completedSessions.first().id) } else Modifier),
-        colors = CardDefaults.cardColors(
-            containerColor = when (day.status) {
-                ActivityDayStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer
-                ActivityDayStatus.SKIPPED -> MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+    EditorialRow(onClick = if (clickable) ({ onOpenSession(day.completedSessions.first().id) }) else null) {
             Icon(
                 when (day.status) {
                     ActivityDayStatus.COMPLETED -> Icons.Default.CheckCircle
@@ -273,7 +264,13 @@ private fun ActivityDayCard(
                     ActivityDayStatus.SKIPPED -> Icons.Default.Block
                     ActivityDayStatus.NONE -> Icons.Default.RadioButtonUnchecked
                 },
-                null
+                null,
+                tint = when (day.status) {
+                    ActivityDayStatus.COMPLETED -> MaterialTheme.colorScheme.secondary
+                    ActivityDayStatus.SKIPPED -> MaterialTheme.colorScheme.tertiary
+                    ActivityDayStatus.PLANNED -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }, modifier = Modifier.size(20.dp)
             )
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(DateFormat.format("EEE, dd MMM", Date(day.timestamp)).toString(), fontWeight = FontWeight.Medium)
@@ -284,11 +281,10 @@ private fun ActivityDayCard(
                         ActivityDayStatus.SKIPPED -> "Día omitido · ${day.skipped?.workoutNameSnapshot.orEmpty()}"
                         ActivityDayStatus.NONE -> "Sin planificación"
                     },
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             day.skipped?.let { TextButton(onClick = { onUndoSkip(it) }) { Text("Deshacer") } }
-        }
     }
 }
 

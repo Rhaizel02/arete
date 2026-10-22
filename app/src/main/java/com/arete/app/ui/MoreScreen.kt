@@ -14,19 +14,17 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MoreScreen(onOpen: (AppScreen) -> Unit) {
-    Scaffold(topBar = { TopAppBar(title = { Text("Más", style = MaterialTheme.typography.headlineSmall) }) }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Scaffold(topBar = { ScreenHeader("Más", subtitle = "ARETE · TU ESPACIO") }) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
             listOf(
                 Triple(AppScreen.Catalog, Icons.Default.FitnessCenter, "Ejercicios"),
                 Triple(AppScreen.History, Icons.Default.History, "Historial"),
                 Triple(AppScreen.Activity, Icons.Default.CalendarMonth, "Actividad"),
                 Triple(AppScreen.Settings, Icons.Default.Tune, "Ajustes")
-            ).forEach { (screen, icon, label) -> item { TonalCard(onClick = { onOpen(screen) }) {
-                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            ).forEach { (screen, icon, label) -> item { EditorialRow(onClick = { onOpen(screen) }) {
                     Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
                     Text(label, Modifier.weight(1f).padding(horizontal = 16.dp), style = MaterialTheme.typography.titleMedium)
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
-                }
             } } }
         }
     }
