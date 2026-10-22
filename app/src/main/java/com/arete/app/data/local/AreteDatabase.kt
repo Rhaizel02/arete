@@ -30,6 +30,8 @@ abstract class AreteDatabase : RoomDatabase() {
     abstract fun routineDao(): RoutineDao
     abstract fun sessionDao(): SessionDao
     abstract fun progressDao(): ProgressDao
+    abstract fun planningDao(): PlanningDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {

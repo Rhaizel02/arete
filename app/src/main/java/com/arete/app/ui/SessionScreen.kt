@@ -79,6 +79,7 @@ fun SessionScreen(
 ) {
     val sessionFlow = remember(sessionId) { viewModel.observeSession(sessionId) }
     val data by sessionFlow.collectAsStateWithLifecycle(initialValue = null)
+    val vibrationEnabled by viewModel.vibrationEnabled.collectAsStateWithLifecycle()
     val details = data?.session
     val session = details?.session
     val exercises = details?.orderedExercises().orEmpty()
@@ -148,6 +149,7 @@ fun SessionScreen(
                 item(key = "timer") {
                     RestTimerBanner(
                         endAt = endAt,
+                        vibrationEnabled = vibrationEnabled,
                         onAdjust = { viewModel.adjustRestTimer(session, it) },
                         onSkip = { viewModel.skipRestTimer(session) }
                     )
@@ -243,6 +245,7 @@ fun SessionScreen(
 @Composable
 private fun RestTimerBanner(
     endAt: Long,
+    vibrationEnabled: Boolean,
     onAdjust: (Int) -> Unit,
     onSkip: () -> Unit
 ) {
@@ -253,7 +256,7 @@ private fun RestTimerBanner(
             remaining = (endAt - System.currentTimeMillis()).coerceAtLeast(0)
             if (remaining > 0) delay(250)
         } while (remaining > 0)
-        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (vibrationEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         onSkip()
     }
     val totalSeconds = ceil(remaining / 1_000.0).toInt()

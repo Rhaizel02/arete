@@ -5,11 +5,13 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.ColumnInfo
+import kotlinx.serialization.Serializable
 
 @Entity(
     tableName = "exercises",
     indices = [Index("nameEs"), Index("nameEn"), Index(value = ["source", "sourceId"], unique = true)]
 )
+@Serializable
 data class ExerciseEntity(
     @PrimaryKey val id: String,
     val nameEs: String,
@@ -29,6 +31,7 @@ data class ExerciseEntity(
 )
 
 @Entity(tableName = "routines", indices = [Index("isActive")])
+@Serializable
 data class RoutineEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -47,6 +50,7 @@ data class RoutineEntity(
     )],
     indices = [Index("routineId"), Index(value = ["routineId", "position"], unique = true)]
 )
+@Serializable
 data class WorkoutEntity(
     @PrimaryKey val id: String,
     val routineId: String,
@@ -75,6 +79,7 @@ data class WorkoutEntity(
     ],
     indices = [Index("workoutId"), Index("exerciseId"), Index(value = ["workoutId", "position"], unique = true)]
 )
+@Serializable
 data class RoutineExerciseEntity(
     @PrimaryKey val id: String,
     val workoutId: String,
@@ -98,6 +103,7 @@ data class RoutineExerciseEntity(
     )],
     indices = [Index("routineExerciseId"), Index(value = ["routineExerciseId", "position"], unique = true)]
 )
+@Serializable
 data class PrescriptionSetEntity(
     @PrimaryKey val id: String,
     val routineExerciseId: String,
@@ -118,6 +124,7 @@ data class PrescriptionSetEntity(
     ],
     indices = [Index("routineId"), Index("sourceWorkoutId"), Index("startedAt")]
 )
+@Serializable
 data class WorkoutSessionEntity(
     @PrimaryKey val id: String,
     val routineId: String?,
@@ -140,6 +147,7 @@ data class WorkoutSessionEntity(
     ],
     indices = [Index("sessionId"), Index("exerciseId"), Index(value = ["sessionId", "position"], unique = true)]
 )
+@Serializable
 data class SessionExerciseEntity(
     @PrimaryKey val id: String,
     val sessionId: String,
@@ -165,6 +173,7 @@ data class SessionExerciseEntity(
     )],
     indices = [Index("sessionExerciseId"), Index(value = ["sessionExerciseId", "position"], unique = true)]
 )
+@Serializable
 data class SessionSetEntity(
     @PrimaryKey val id: String,
     val sessionExerciseId: String,
@@ -181,6 +190,7 @@ data class SessionSetEntity(
 )
 
 @Entity(tableName = "body_weight_entries", indices = [Index(value = ["recordedAt"], unique = true)])
+@Serializable
 data class BodyWeightEntryEntity(
     @PrimaryKey val id: String,
     val weightKg: Double,
@@ -196,6 +206,7 @@ data class BodyWeightEntryEntity(
     ],
     indices = [Index("routineId"), Index("workoutId"), Index(value = ["plannedEpochDay", "workoutId"], unique = true)]
 )
+@Serializable
 data class SkippedPlannedWorkoutEntity(
     @PrimaryKey val id: String,
     val routineId: String?,

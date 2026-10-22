@@ -3,16 +3,20 @@
 package com.arete.app.ui
 
 import android.app.Application
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.arete.app.AreteApplication
 import com.arete.app.data.AreteRepository
+import com.arete.app.data.BackupService
 import com.arete.app.data.ExerciseDraft
 import com.arete.app.data.PreferencesRepository
 import com.arete.app.data.ProgressRepository
 import com.arete.app.data.ExerciseProgress
+import com.arete.app.data.PlanningRepository
 import com.arete.app.data.SetDraft
 import com.arete.app.data.SessionRepository
 import com.arete.app.data.SessionViewData
@@ -41,11 +45,20 @@ class AreteViewModel(
     private val repository: AreteRepository,
     private val preferences: PreferencesRepository,
     private val sessions: SessionRepository,
-    private val progress: ProgressRepository
+    private val progress: ProgressRepository,
+    private val planning: PlanningRepository,
+    private val backup: BackupService
 ) : AndroidViewModel(application) {
+    var routineExportPayload: String? = null
+    var backupExportPayload: String? = null
+    var pendingBackupRestore by androidx.compose.runtime.mutableStateOf<String?>(null)
     val routines = repository.routines.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val themeMode = preferences.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
     val restTimerEnabled = preferences.restTimerEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val settings = preferences.settings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.AppSettings())
+    val vibrationEnabled = preferences.vibrationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val homeState = sessions.homeState
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -53,6 +66,8 @@ class AreteViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val progressState = progress.dashboard(preferences.weeklyGoal)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.ProgressDashboard())
+    val planningState = planning.state
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.PlanningState())
 
     val exerciseQuery = MutableStateFlow("")
     val exercises = exerciseQuery.flatMapLatest(repository::searchExercises)
@@ -151,14 +166,43 @@ class AreteViewModel(
 
     fun setWeeklyGoal(goal: Int) = viewModelScope.launch { preferences.setWeeklyGoal(goal) }
 
-    fun saveBodyWeight(id: String?, weightKg: Double, notes: String, onSaved: () -> Unit = {}) = launchAction("Peso guardado") {
-        progress.saveBodyWeight(id, weightKg, notes)
+    fun saveBodyWeight(id: String?, weightKg: Double, notes: String, recordedAt: Long, onSaved: () -> Unit = {}) = launchAction("Peso guardado") {
+        progress.saveBodyWeight(id, weightKg, notes, recordedAt)
         onSaved()
     }
 
     fun deleteBodyWeight(entry: BodyWeightEntryEntity) = launchAction("Registro eliminado") {
         progress.deleteBodyWeight(entry)
     }
+
+    fun setVibrationEnabled(enabled: Boolean) = viewModelScope.launch { preferences.setVibrationEnabled(enabled) }
+
+    fun setRemindersEnabled(enabled: Boolean) = viewModelScope.launch { preferences.setRemindersEnabled(enabled) }
+
+    fun setReminderTime(hour: Int, minute: Int) = viewModelScope.launch {
+        preferences.setReminderTime(hour, minute)
+    }
+
+    fun setPlannedWorkout(dayOfWeek: Int, workoutId: String?) = launchAction {
+        planning.setPlannedWorkout(dayOfWeek, workoutId)
+    }
+
+    fun skipToday() = launchAction("Día marcado como omitido") { planning.skipToday() }
+
+    fun undoSkippedDay(entry: com.arete.app.data.local.SkippedPlannedWorkoutEntity) = launchAction("Día recuperado") {
+        planning.undoSkippedDay(entry)
+    }
+
+    fun exportBackup(onExported: (String) -> Unit) = launchAction {
+        onExported(kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { backup.export() })
+    }
+
+    fun restoreBackup(raw: String, onRestored: () -> Unit = {}) = launchAction("Backup restaurado") {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { backup.restore(raw) }
+        onRestored()
+    }
+
+    fun showMessage(message: String) = viewModelScope.launch { _messages.emit(message) }
 
     fun createRoutine(name: String, onCreated: (String) -> Unit) = launchAction {
         onCreated(repository.createRoutine(name))
@@ -252,7 +296,9 @@ class AreteViewModel(
                 application.repository,
                 application.preferences,
                 application.sessionRepository,
-                application.progressRepository
+                application.progressRepository,
+                application.planningRepository,
+                application.backupService
             ) as T
     }
 

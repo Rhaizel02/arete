@@ -369,4 +369,82 @@ interface ProgressDao {
 
     @Delete
     suspend fun deleteBodyWeight(entry: BodyWeightEntryEntity)
+
+    @Query("SELECT * FROM body_weight_entries WHERE recordedAt = :recordedAt LIMIT 1")
+    suspend fun getBodyWeightAt(recordedAt: Long): BodyWeightEntryEntity?
+}
+
+@Dao
+interface PlanningDao {
+    @Query("SELECT * FROM skipped_planned_workouts ORDER BY plannedEpochDay DESC")
+    fun observeSkippedDays(): Flow<List<SkippedPlannedWorkoutEntity>>
+
+    @Query("SELECT * FROM skipped_planned_workouts WHERE plannedEpochDay = :epochDay ORDER BY skippedAt DESC")
+    suspend fun getSkippedDays(epochDay: Long): List<SkippedPlannedWorkoutEntity>
+
+    @Insert
+    suspend fun insertSkippedDay(entry: SkippedPlannedWorkoutEntity)
+
+    @Delete
+    suspend fun deleteSkippedDay(entry: SkippedPlannedWorkoutEntity)
+}
+
+@Dao
+interface BackupDao {
+    @Query("SELECT * FROM exercises ORDER BY id") suspend fun exercises(): List<ExerciseEntity>
+    @Query("SELECT * FROM routines ORDER BY id") suspend fun routines(): List<RoutineEntity>
+    @Query("SELECT * FROM workouts ORDER BY id") suspend fun workouts(): List<WorkoutEntity>
+    @Query("SELECT * FROM routine_exercises ORDER BY id") suspend fun routineExercises(): List<RoutineExerciseEntity>
+    @Query("SELECT * FROM prescription_sets ORDER BY id") suspend fun prescriptionSets(): List<PrescriptionSetEntity>
+    @Query("SELECT * FROM workout_sessions ORDER BY id") suspend fun workoutSessions(): List<WorkoutSessionEntity>
+    @Query("SELECT * FROM session_exercises ORDER BY id") suspend fun sessionExercises(): List<SessionExerciseEntity>
+    @Query("SELECT * FROM session_sets ORDER BY id") suspend fun sessionSets(): List<SessionSetEntity>
+    @Query("SELECT * FROM body_weight_entries ORDER BY id") suspend fun bodyWeights(): List<BodyWeightEntryEntity>
+    @Query("SELECT * FROM skipped_planned_workouts ORDER BY id") suspend fun skippedDays(): List<SkippedPlannedWorkoutEntity>
+
+    @Insert suspend fun insertExercises(items: List<ExerciseEntity>)
+    @Insert suspend fun insertRoutines(items: List<RoutineEntity>)
+    @Insert suspend fun insertWorkouts(items: List<WorkoutEntity>)
+    @Insert suspend fun insertRoutineExercises(items: List<RoutineExerciseEntity>)
+    @Insert suspend fun insertPrescriptionSets(items: List<PrescriptionSetEntity>)
+    @Insert suspend fun insertWorkoutSessions(items: List<WorkoutSessionEntity>)
+    @Insert suspend fun insertSessionExercises(items: List<SessionExerciseEntity>)
+    @Insert suspend fun insertSessionSets(items: List<SessionSetEntity>)
+    @Insert suspend fun insertBodyWeights(items: List<BodyWeightEntryEntity>)
+    @Insert suspend fun insertSkippedDays(items: List<SkippedPlannedWorkoutEntity>)
+
+    @Query("DELETE FROM session_sets") suspend fun clearSessionSets()
+    @Query("DELETE FROM session_exercises") suspend fun clearSessionExercises()
+    @Query("DELETE FROM workout_sessions") suspend fun clearWorkoutSessions()
+    @Query("DELETE FROM prescription_sets") suspend fun clearPrescriptionSets()
+    @Query("DELETE FROM routine_exercises") suspend fun clearRoutineExercises()
+    @Query("DELETE FROM skipped_planned_workouts") suspend fun clearSkippedDays()
+    @Query("DELETE FROM workouts") suspend fun clearWorkouts()
+    @Query("DELETE FROM routines") suspend fun clearRoutines()
+    @Query("DELETE FROM body_weight_entries") suspend fun clearBodyWeights()
+    @Query("DELETE FROM exercises") suspend fun clearExercises()
+
+    @Transaction
+    suspend fun replaceAll(data: BackupDatabaseData) {
+        clearSessionSets()
+        clearSessionExercises()
+        clearWorkoutSessions()
+        clearPrescriptionSets()
+        clearRoutineExercises()
+        clearSkippedDays()
+        clearWorkouts()
+        clearRoutines()
+        clearBodyWeights()
+        clearExercises()
+        if (data.exercises.isNotEmpty()) insertExercises(data.exercises)
+        if (data.routines.isNotEmpty()) insertRoutines(data.routines)
+        if (data.workouts.isNotEmpty()) insertWorkouts(data.workouts)
+        if (data.routineExercises.isNotEmpty()) insertRoutineExercises(data.routineExercises)
+        if (data.prescriptionSets.isNotEmpty()) insertPrescriptionSets(data.prescriptionSets)
+        if (data.workoutSessions.isNotEmpty()) insertWorkoutSessions(data.workoutSessions)
+        if (data.sessionExercises.isNotEmpty()) insertSessionExercises(data.sessionExercises)
+        if (data.sessionSets.isNotEmpty()) insertSessionSets(data.sessionSets)
+        if (data.bodyWeights.isNotEmpty()) insertBodyWeights(data.bodyWeights)
+        if (data.skippedDays.isNotEmpty()) insertSkippedDays(data.skippedDays)
+    }
 }

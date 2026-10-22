@@ -68,8 +68,9 @@ class ProgressRepository(
         dao.observePerformanceSets(),
         database.sessionDao().observeCompletedSessionHeaders(),
         dao.observeBodyWeights(),
-        weeklyGoal
-    ) { rows, sessions, weights, goal ->
+        weeklyGoal,
+        PlanningDates.dayChanges(now)
+    ) { rows, sessions, weights, goal, _ ->
         buildDashboard(rows.map(::toProgressSet), sessions, weights, goal)
     }
 
@@ -85,15 +86,24 @@ class ProgressRepository(
         return ProgressMetrics.recordsForSession(all, sessionId)
     }
 
-    suspend fun saveBodyWeight(id: String?, weightKg: Double, notes: String = ""): String {
+    suspend fun saveBodyWeight(
+        id: String?,
+        weightKg: Double,
+        notes: String = "",
+        recordedAt: Long? = null
+    ): String {
         require(weightKg in 1.0..1_000.0 && weightKg.isFinite()) { "Introduce un peso válido" }
         val existing = id?.let { dao.getBodyWeight(it) }
+        val targetDate = recordedAt ?: existing?.recordedAt ?: now()
+        require(targetDate > 0) { "Selecciona una fecha válida" }
+        val sameDate = dao.getBodyWeightAt(targetDate)
+        require(sameDate == null || sameDate.id == existing?.id) { "Ya existe un registro en esa fecha" }
         val entryId = existing?.id ?: newId()
         dao.upsertBodyWeight(
             BodyWeightEntryEntity(
                 id = entryId,
                 weightKg = weightKg,
-                recordedAt = existing?.recordedAt ?: now(),
+                recordedAt = targetDate,
                 notes = notes.trim()
             )
         )

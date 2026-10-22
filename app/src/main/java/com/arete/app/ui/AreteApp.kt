@@ -13,10 +13,14 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,19 +29,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-sealed interface AppScreen {
+sealed interface AppScreen : java.io.Serializable {
     data object Home : AppScreen
     data object Routines : AppScreen
     data object Catalog : AppScreen
     data object History : AppScreen
     data object Progress : AppScreen
     data object BodyWeight : AppScreen
+    data object Settings : AppScreen
+    data object Planning : AppScreen
+    data object Activity : AppScreen
     data class ExerciseProgress(val exerciseId: String) : AppScreen
     data class Session(val sessionId: String) : AppScreen
     data class SessionExercisePicker(
@@ -62,8 +72,10 @@ fun AreteApp(viewModel: AreteViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    val stack = remember { mutableStateListOf<AppScreen>(AppScreen.Home) }
-    var exportPayload by remember { mutableStateOf<String?>(null) }
+    val stack = rememberSaveable(saver = Saver<androidx.compose.runtime.snapshots.SnapshotStateList<AppScreen>, java.util.ArrayList<AppScreen>>(
+        save = { java.util.ArrayList(it) },
+        restore = { it.toMutableStateList() }
+    )) { mutableStateListOf<AppScreen>(AppScreen.Home) }
 
     fun push(screen: AppScreen) { stack += screen }
     fun back() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
@@ -86,13 +98,29 @@ fun AreteApp(viewModel: AreteViewModel) {
         }
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        val content = exportPayload
+        val content = viewModel.routineExportPayload
         if (uri != null && content != null) {
             runCatching { context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(content) } }
                 .onSuccess { scope.launch { snackbar.showSnackbar("Rutina exportada") } }
                 .onFailure { scope.launch { snackbar.showSnackbar("No se pudo guardar el archivo") } }
         }
-        exportPayload = null
+        viewModel.routineExportPayload = null
+    }
+    val backupExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val content = viewModel.backupExportPayload
+        if (uri != null && content != null) {
+            runCatching { context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(content) } }
+                .onSuccess { scope.launch { snackbar.showSnackbar("Backup exportado") } }
+                .onFailure { scope.launch { snackbar.showSnackbar("No se pudo guardar el backup") } }
+        }
+        viewModel.backupExportPayload = null
+    }
+    val backupRestoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }
+                .onSuccess { raw -> if (raw != null) viewModel.pendingBackupRestore = raw }
+                .onFailure { scope.launch { snackbar.showSnackbar("No se pudo leer el backup") } }
+        }
     }
 
     LaunchedEffect(viewModel) {
@@ -116,7 +144,9 @@ fun AreteApp(viewModel: AreteViewModel) {
                 onStartFree = { viewModel.startFreeWorkout { push(AppScreen.Session(it)) } },
                 onOpenRoutines = { selectRoot(AppScreen.Routines) },
                 onOpenHistory = { selectRoot(AppScreen.History) },
-                onOpenProgress = { selectRoot(AppScreen.Progress) }
+                onOpenProgress = { selectRoot(AppScreen.Progress) },
+                onOpenActivity = { push(AppScreen.Activity) },
+                onOpenSettings = { push(AppScreen.Settings) }
             )
             AppScreen.Routines -> RoutineListScreen(
                 viewModel = viewModel,
@@ -125,7 +155,7 @@ fun AreteApp(viewModel: AreteViewModel) {
                 onImport = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                 onExport = { routine ->
                     viewModel.exportRoutine(routine.id) { content ->
-                        exportPayload = content
+                        viewModel.routineExportPayload = content
                         val safeName = routine.name.lowercase().replace(Regex("[^a-z0-9áéíóúüñ]+"), "-").trim('-')
                         exportLauncher.launch("${safeName.ifBlank { "rutina" }}.arete.json")
                     }
@@ -148,6 +178,20 @@ fun AreteApp(viewModel: AreteViewModel) {
             )
             AppScreen.BodyWeight -> BodyWeightScreen(viewModel, ::back)
             is AppScreen.ExerciseProgress -> ExerciseProgressScreen(screen.exerciseId, viewModel, ::back)
+            AppScreen.Settings -> SettingsScreen(
+                viewModel = viewModel,
+                onBack = ::back,
+                onOpenPlanning = { push(AppScreen.Planning) },
+                onExportBackup = {
+                    viewModel.exportBackup { content ->
+                        viewModel.backupExportPayload = content
+                        backupExportLauncher.launch("arete-backup.json")
+                    }
+                },
+                onRestoreBackup = { backupRestoreLauncher.launch(arrayOf("application/json", "text/plain")) }
+            )
+            AppScreen.Planning -> WeeklyPlanningScreen(viewModel, ::back)
+            AppScreen.Activity -> ActivityScreen(viewModel, ::back) { push(AppScreen.Session(it)) }
             is AppScreen.Session -> SessionScreen(
                 sessionId = screen.sessionId,
                 viewModel = viewModel,
@@ -251,7 +295,7 @@ fun AreteApp(viewModel: AreteViewModel) {
                         selected = current == screen,
                         onClick = { selectRoot(screen) },
                         icon = { Icon(icon, label) },
-                        label = { androidx.compose.material3.Text(label) }
+                        label = { Text(label) }
                     )
                 }
             }
@@ -259,6 +303,20 @@ fun AreteApp(viewModel: AreteViewModel) {
         SnackbarHost(
             snackbar,
             Modifier.align(Alignment.BottomCenter).padding(bottom = if (isRoot) 80.dp else 0.dp)
+        )
+    }
+    viewModel.pendingBackupRestore?.let { raw ->
+        AlertDialog(
+            onDismissRequest = { viewModel.pendingBackupRestore = null },
+            title = { Text("Restaurar backup completo") },
+            text = { Text("Se reemplazarán rutinas, sesiones, peso, planificación y preferencias locales. El archivo se validará antes de modificar nada.") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.pendingBackupRestore = null
+                    viewModel.restoreBackup(raw) { selectRoot(AppScreen.Home) }
+                }) { Text("Reemplazar y restaurar") }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.pendingBackupRestore = null }) { Text("Cancelar") } }
         )
     }
 }

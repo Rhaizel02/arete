@@ -24,7 +24,7 @@ class ProgressRepositoryTest {
     private lateinit var database: AreteDatabase
     private lateinit var sessions: SessionRepository
     private lateinit var progress: ProgressRepository
-    private var clock = 1_000_000L
+    private var clock = 1_800_000_000_000L
     private var ids = 0
 
     @Before
@@ -83,10 +83,13 @@ class ProgressRepositoryTest {
         assertEquals(2, dashboard.bodyWeights.size)
         assertEquals(-1.0, dashboard.bodyWeightTrend.recentChangeKg!!, 0.0)
 
-        progress.saveBodyWeight(secondId, 78.5, "corregido")
+        val correctedDate = clock - 2 * 86_400_000L
+        progress.saveBodyWeight(secondId, 78.5, "corregido", correctedDate)
         dashboard = progress.dashboard(flowOf(3)).first()
-        assertEquals(78.5, dashboard.bodyWeightTrend.latestKg!!, 0.0)
-        assertEquals("corregido", dashboard.bodyWeights.last().notes)
+        assertEquals(secondId, dashboard.bodyWeights.first().id)
+        assertEquals(correctedDate, dashboard.bodyWeights.first().recordedAt)
+        assertEquals(80.0, dashboard.bodyWeightTrend.latestKg!!, 0.0)
+        assertEquals("corregido", dashboard.bodyWeights.first().notes)
 
         progress.deleteBodyWeight(dashboard.bodyWeights.single { it.id == firstId })
         dashboard = progress.dashboard(flowOf(3)).first()

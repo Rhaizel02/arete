@@ -4,6 +4,8 @@ package com.arete.app.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +47,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +67,7 @@ import com.arete.app.data.ExerciseProgress
 import com.arete.app.data.PersonalRecord
 import com.arete.app.data.PrType
 import com.arete.app.data.ProgressDashboard
+import com.arete.app.data.PlanningDates
 import com.arete.app.data.local.BodyWeightEntryEntity
 import java.util.Date
 import kotlin.math.max
@@ -336,8 +342,8 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
             }
         }
     }
-    if (showEditor) BodyWeightEditor(editing, onDismiss = { showEditor = false }) { kg, notes ->
-        viewModel.saveBodyWeight(editing?.id, kg, notes) { showEditor = false }
+    if (showEditor) BodyWeightEditor(editing, onDismiss = { showEditor = false }) { kg, notes, recordedAt ->
+        viewModel.saveBodyWeight(editing?.id, kg, notes, recordedAt) { showEditor = false }
     }
     deleting?.let { entry ->
         ConfirmDialog("Eliminar registro", "Se eliminará el peso de ${formatDate(entry.recordedAt)}.", onDismiss = { deleting = null }) {
@@ -348,15 +354,23 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun BodyWeightEditor(entry: BodyWeightEntryEntity?, onDismiss: () -> Unit, onSave: (Double, String) -> Unit) {
+private fun BodyWeightEditor(
+    entry: BodyWeightEntryEntity?,
+    onDismiss: () -> Unit,
+    onSave: (Double, String, Long) -> Unit
+) {
     var weight by remember(entry?.id) { mutableStateOf(entry?.weightKg?.let(::formatMetric).orEmpty()) }
     var notes by remember(entry?.id) { mutableStateOf(entry?.notes.orEmpty()) }
+    var selectedDate by remember(entry?.id) {
+        mutableStateOf(PlanningDates.pickerDate(entry?.recordedAt ?: System.currentTimeMillis()))
+    }
+    var showDatePicker by remember { mutableStateOf(false) }
     val parsed = weight.replace(',', '.').toDoubleOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (entry == null) "Añadir peso" else "Editar peso") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = weight,
                     onValueChange = { weight = it.filter { char -> char.isDigit() || char == ',' || char == '.' } },
@@ -364,12 +378,33 @@ private fun BodyWeightEditor(entry: BodyWeightEntryEntity?, onDismiss: () -> Uni
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
+                OutlinedButton(onClick = { showDatePicker = true }, Modifier.fillMaxWidth()) {
+                    Text("Fecha · ${formatDate(PlanningDates.timestampFromPickerDate(selectedDate))}")
+                }
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Nota opcional") })
             }
         },
-        confirmButton = { Button(enabled = parsed != null && parsed in 1.0..1_000.0, onClick = { onSave(parsed!!, notes) }) { Text("Guardar") } },
+        confirmButton = {
+            Button(
+                enabled = parsed != null && parsed in 1.0..1_000.0,
+                onClick = { onSave(parsed!!, notes, PlanningDates.timestampFromPickerDate(selectedDate)) }
+            ) { Text("Guardar") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
+    if (showDatePicker) {
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { selectedDate = it }
+                    showDatePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
+        ) { DatePicker(state = pickerState) }
+    }
 }
 
 @Composable

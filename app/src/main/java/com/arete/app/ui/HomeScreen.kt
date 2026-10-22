@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,19 +49,25 @@ fun HomeScreen(
     onStartFree: () -> Unit,
     onOpenRoutines: () -> Unit,
     onOpenHistory: () -> Unit,
-    onOpenProgress: () -> Unit
+    onOpenProgress: () -> Unit,
+    onOpenActivity: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val state by viewModel.homeState.collectAsStateWithLifecycle()
     val timerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
     val progress by viewModel.progressState.collectAsStateWithLifecycle()
+    val planning by viewModel.planningState.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Column {
-                    Text("Arete", fontWeight = FontWeight.Bold)
-                    Text("Entrena. Registra. Mejora.", style = MaterialTheme.typography.labelMedium)
-                }
-            })
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Arete", fontWeight = FontWeight.Bold)
+                        Text("Entrena. Registra. Mejora.", style = MaterialTheme.typography.labelMedium)
+                    }
+                },
+                actions = { IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Settings, "Ajustes") } }
+            )
         }
     ) { padding ->
         LazyColumn(
@@ -107,7 +116,7 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(Icons.Default.FitnessCenter, null)
-                                Text("Empezar")
+                                Text("Entrenar ${next.workoutName}")
                             }
                         }
                     }
@@ -134,11 +143,45 @@ fun HomeScreen(
             }
 
             item {
+                val today = planning.today
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
+                            Text(" Estado de hoy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                        when {
+                            today.completedSession != null -> {
+                                Text("Entrenamiento completado", fontWeight = FontWeight.Medium)
+                                Text(today.completedSession.workoutNameSnapshot, style = MaterialTheme.typography.bodySmall)
+                            }
+                            today.skipped != null -> {
+                                Text("Hoy no entreno", fontWeight = FontWeight.Medium)
+                                Text(today.skipped.workoutNameSnapshot, style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = { viewModel.undoSkippedDay(today.skipped) }) { Text("Deshacer") }
+                            }
+                            today.plannedWorkout != null -> {
+                                Text("Planificado · ${today.plannedWorkout.name}", fontWeight = FontWeight.Medium)
+                                Text("La secuencia real no cambia si hoy no puedes entrenar.", style = MaterialTheme.typography.bodySmall)
+                                OutlinedButton(onClick = viewModel::skipToday) { Text("Hoy no entreno") }
+                            }
+                            else -> Text("Sin entrenamiento planificado", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        TextButton(onClick = onOpenActivity) { Text("Ver actividad") }
+                    }
+                }
+            }
+
+            item {
                 Card(Modifier.fillMaxWidth().clickable(onClick = onOpenProgress)) {
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("${progress.weekly.currentCount} / ${progress.weekly.goal} esta semana", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                if (progress.weekly.currentCount >= progress.weekly.goal) "Semana completada"
+                                else "${progress.weekly.currentCount} / ${progress.weekly.goal} esta semana",
+                                fontWeight = FontWeight.SemiBold
+                            )
                             Text(
                                 if (progress.weekly.streak == 1) "🔥 1 semana cumpliendo"
                                 else "🔥 ${progress.weekly.streak} semanas cumpliendo",

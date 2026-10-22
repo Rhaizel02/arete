@@ -2,6 +2,7 @@ package com.arete.app.data.local
 
 import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 
 class Converters {
     @TypeConverter
@@ -24,7 +25,8 @@ class Converters {
     fun stringToSessionStatus(value: String): SessionStatus = SessionStatus.valueOf(value)
 }
 
+@Serializable
 enum class SetType { WARMUP, WORK }
 
+@Serializable
 enum class SessionStatus { IN_PROGRESS, COMPLETED, DISCARDED }
-

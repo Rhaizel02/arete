@@ -1,12 +1,12 @@
 # Arete
 
-Arete es una aplicación Android personal y offline-first para diseñar rutinas, registrar entrenamientos reales y convertir el histórico en progreso comprensible. Los Bloques 1 a 3 incluyen catálogo local, rutinas, ejecución de sesiones, historial editable, PR, e1RM, consistencia y peso corporal.
+Arete es una aplicación Android personal y offline-first para diseñar rutinas, planificar la semana, registrar entrenamientos reales y convertir el histórico en progreso comprensible. Los Bloques 1 a 4 cierran la V1 con recordatorios locales, actividad, días omitidos y backup/restore completo.
 
 ## Stack y arquitectura
 
 - Kotlin, Jetpack Compose y Material 3 en una única actividad.
 - Room es la fuente de verdad para rutinas, sesiones activas e historial.
-- DataStore Preferences guarda el tema, el ajuste global del temporizador y el objetivo semanal.
+- DataStore Preferences centraliza tema, temporizador, vibración, objetivo semanal, planificación y recordatorios.
 - Los repositorios concentran operaciones transaccionales: activación y edición de rutinas, importación, creación de snapshots y mutaciones del entrenamiento.
 - Sin backend, red, framework de inyección ni estadísticas derivadas persistidas.
 
@@ -40,6 +40,14 @@ El destino **Progreso** resume actividad reciente, objetivo semanal, racha, PR, 
 
 El e1RM usa Epley (`peso × (1 + repeticiones / 30)`) y solo admite series de trabajo completadas de 1 a 12 repeticiones. Los PR cubren mayor peso, mayor e1RM estimado y más repeticiones para un peso. La racha cuenta semanas de lunes a domingo que alcanzan el objetivo; una semana actual incompleta no rompe prematuramente la racha anterior.
 
+## Planificación y backup
+
+La planificación semanal asigna workouts orientativos a días, sin cambiar la secuencia real de la rutina. **Hoy no entreno** registra un día omitido independiente, reversible y sin crear sesiones falsas. La vista Actividad distingue entrenamientos, días pendientes, omitidos y no planificados.
+
+Los recordatorios son locales, opcionales e inexactos: se programan únicamente para días planificados y se omiten si ya se entrenó, se marcó el día como omitido o existe una sesión activa. Android puede retrasarlos por ahorro de batería. Se reprograman tras cambios de hora, zona o reinicio.
+
+Routine JSON v1 continúa dedicado a compartir rutinas. El contrato separado [Backup JSON v1](docs/backup-json-v1.md) contiene toda la base y las preferencias necesarias. El restore valida primero y reemplaza todas las tablas Room en una transacción; nunca mezcla historiales silenciosamente.
+
 ## Schema Room v2
 
 Los schemas exportados v1 y v2 están versionados en `app/schemas`. La migración explícita `MIGRATION_1_2` conserva los datos existentes y añade el estado persistente del temporizador, la relación con el ejercicio de rutina de origen y notas editables por ejercicio de sesión.
@@ -48,7 +56,7 @@ Tablas principales:
 
 - `exercises`, `routines`, `workouts`, `routine_exercises`, `prescription_sets`;
 - `workout_sessions`, `session_exercises`, `session_sets`;
-- `body_weight_entries`, activada para el histórico y tendencia de peso, y `skipped_planned_workouts`, reservada para bloques posteriores.
+- `body_weight_entries`, con fecha editable, y `skipped_planned_workouts`, para días planificados omitidos.
 
 Los snapshots de sesión aseguran que editar una plantilla no modifique entrenamientos en curso ni históricos.
 
@@ -65,4 +73,4 @@ El contrato sigue en la versión 1 y se documenta en [docs/routine-json-v1.md](d
 
 Las pruebas locales usan Room real en memoria bajo Robolectric. Además de la cobertura previa, validan el bloqueo de sustitución histórica, e1RM, cada tipo de PR, exclusiones, recálculo tras editar/borrar, límites semanales, rachas, sugerencias, estadísticas y CRUD/tendencia de peso. La prueba instrumental abre una base v1 real, ejecuta la migración a v2 y comprueba tanto los datos previos como las columnas nuevas.
 
-Más detalles: [Bloque 2](docs/block-2-workout-engine.md) y [Bloque 3](docs/block-3-progress.md).
+Más detalles: [Bloque 2](docs/block-2-workout-engine.md), [Bloque 3](docs/block-3-progress.md) y [Bloque 4](docs/block-4-v1.md).

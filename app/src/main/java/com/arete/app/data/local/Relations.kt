@@ -2,6 +2,7 @@ package com.arete.app.data.local
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import kotlinx.serialization.Serializable
 
 data class RoutineWithWorkouts(
     @Embedded val routine: RoutineEntity,
@@ -97,4 +98,18 @@ data class PerformanceSetRow(
     val reps: Int?,
     val rir: Int?,
     val isFailure: Boolean
+)
+
+@Serializable
+data class BackupDatabaseData(
+    val exercises: List<ExerciseEntity> = emptyList(),
+    val routines: List<RoutineEntity> = emptyList(),
+    val workouts: List<WorkoutEntity> = emptyList(),
+    val routineExercises: List<RoutineExerciseEntity> = emptyList(),
+    val prescriptionSets: List<PrescriptionSetEntity> = emptyList(),
+    val workoutSessions: List<WorkoutSessionEntity> = emptyList(),
+    val sessionExercises: List<SessionExerciseEntity> = emptyList(),
+    val sessionSets: List<SessionSetEntity> = emptyList(),
+    val bodyWeights: List<BodyWeightEntryEntity> = emptyList(),
+    val skippedDays: List<SkippedPlannedWorkoutEntity> = emptyList()
 )
