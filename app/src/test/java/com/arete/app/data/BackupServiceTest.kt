@@ -128,6 +128,33 @@ class BackupServiceTest {
         assertTrue(database.backupDao().routines().isEmpty())
     }
 
+    @Test
+    fun preferencesFailureRollsBackFitnessAndCompensatesPreviousSettings() = runTest {
+        seedEverything()
+        val raw = service.export().replace("\"weeklyGoal\": 4", "\"weeklyGoal\": 6")
+        var attempts = 0
+        service = BackupService(database, preferences, now = { clock }, restorePreferences = { snapshot ->
+            preferences.restore(snapshot)
+            if (attempts++ == 0) throw java.io.IOException("Injected preferences failure after write")
+        })
+        assertRestoreFails(raw.replace("82.5", "90.0"))
+        assertEquals(82.5, database.backupDao().sessionSets().single().weightKg!!, 0.0)
+        assertEquals(4, preferences.settings.first().weeklyGoal)
+        assertEquals(2, attempts)
+    }
+
+    @Test
+    fun legacyV1FixtureRestoresWithoutAutomaticConfiguration() = runTest {
+        val raw = javaClass.getResource("/backup-v1-legacy.json")!!.readText()
+        service.restore(raw)
+        assertEquals("legacy-routine", database.backupDao().routines().single().id)
+        assertEquals("legacy-set", database.backupDao().sessionSets().single().id)
+        assertEquals(75.0, database.backupDao().sessionSets().single().weightKg!!, 0.0)
+        assertEquals(79.0, database.backupDao().bodyWeights().single().weightKg, 0.0)
+        assertEquals(ThemeMode.DARK, preferences.settings.first().themeMode)
+        assertEquals(1, Json.decodeFromString<AreteBackup>(service.export()).backupSchemaVersion)
+    }
+
     private suspend fun seedEverything() {
         val dao = database.backupDao()
         dao.insertExercises(listOf(ExerciseEntity(

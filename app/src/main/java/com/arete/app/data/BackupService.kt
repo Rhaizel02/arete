@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 const val BACKUP_SCHEMA_VERSION = 1
 
@@ -24,7 +27,8 @@ class BackupImportException(message: String, cause: Throwable? = null) : Illegal
 class BackupService(
     private val database: AreteDatabase,
     private val preferences: PreferencesRepository,
-    private val now: () -> Long = System::currentTimeMillis
+    private val now: () -> Long = System::currentTimeMillis,
+    private val restorePreferences: suspend (BackupPreferences) -> Unit = preferences::restore
 ) {
     private val json = Json {
         prettyPrint = true
@@ -57,16 +61,27 @@ class BackupService(
 
     /**
      * Full replacement semantics. JSON and relationships are validated before the first write;
-     * all Room tables are then replaced inside one transaction. DataStore follows as a single edit.
+     * Room replacement stays uncommitted until preferences succeed. Compensation restores the old
+     * preferences on failure. This is not distributed crash-atomicity between Room and DataStore.
      */
     suspend fun restore(raw: String) {
         val backup = decodeAndValidate(raw)
+        val previousPreferences = preferences.backupSnapshot()
+        var preferencesAttempted = false
         try {
-            database.withTransaction { database.backupDao().replaceAll(backup.database) }
+            database.withTransaction {
+                database.backupDao().replaceAll(backup.database)
+                preferencesAttempted = true
+                restorePreferences(backup.preferences)
+            }
         } catch (error: Exception) {
-            throw BackupImportException("No se pudo restaurar el backup; los datos locales no se han modificado", error)
+            val compensated = !preferencesAttempted || withContext(NonCancellable) {
+                runCatching { restorePreferences(previousPreferences) }.isSuccess
+            }
+            if (error is CancellationException) throw error
+            throw BackupImportException(if (compensated) "No se pudo restaurar el backup; los datos locales no se han modificado"
+                else "No se pudo restaurar el backup. Los entrenamientos originales se conservan, pero debes revisar las preferencias", error)
         }
-        preferences.restore(backup.preferences)
     }
 
     internal fun decodeAndValidate(raw: String): AreteBackup {

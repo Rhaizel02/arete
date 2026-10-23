@@ -29,3 +29,9 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 - Icono definitivo del paquete aprobado, sin generar otra identidad.
 - Siguen fuera de alcance zoom, gestos avanzados, backup automático, catálogo multimedia nuevo, Health Connect, integraciones y coaching adaptativo.
 - P2 previos conservados: notificación del temporizador si Android termina el proceso y matching avanzado de precarga ante cambios fuertes de estructura de series.
+
+## Bloque 6 — Backup automático
+
+- Se incorpora el bloque independiente de copias externas SAF, programación diaria opcional, retención verificada y recuperación v1 tras limpiar/reinstalar.
+- Se mantienen fuera de alcance sincronización bidireccional, conflictos entre dispositivos, proveedores cloud integrados y cifrado personalizado.
+- Los P2 anteriores no se modifican. La persistencia remota y disponibilidad de un proveedor SAF no pueden garantizarse por Arete.

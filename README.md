@@ -50,6 +50,8 @@ Los recordatorios son locales, opcionales e inexactos: se programan únicamente 
 
 Routine JSON v1 continúa dedicado a compartir rutinas. El contrato separado [Backup JSON v1](docs/backup-json-v1.md) contiene toda la base y las preferencias necesarias. El restore valida primero y reemplaza todas las tablas Room en una transacción; nunca mezcla historiales silenciosamente.
 
+El [Bloque 6](docs/block-6-backup.md) incorpora copias externas mediante SAF: programación diaria opcional, creación inmediata verificada, estado en Ajustes y retención conservadora de siete automáticas de esta instalación. Las manuales se conservan. La recuperación tras reinstalar utiliza el selector y la confirmación existentes, sin trasladar permisos o configuración automática entre dispositivos.
+
 ## Schema Room v2
 
 Los schemas exportados v1 y v2 están versionados en `app/schemas`. La migración explícita `MIGRATION_1_2` conserva los datos existentes y añade el estado persistente del temporizador, la relación con el ejercicio de rutina de origen y notas editables por ejercicio de sesión.

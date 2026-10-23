@@ -16,6 +16,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.arete.app.backup.AutomaticBackupPreferences
+import com.arete.app.backup.AutomaticBackupCoordinator
+import com.arete.app.backup.SafBackupDestination
+import com.arete.app.backup.BackupWorkScheduler
 
 class AreteApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -29,11 +33,20 @@ class AreteApplication : Application() {
     val planningRepository: PlanningRepository by lazy { PlanningRepository(database, preferences) }
     val backupService: BackupService by lazy { BackupService(database, preferences) }
     val reminderScheduler: WorkoutReminderScheduler by lazy { WorkoutReminderScheduler(this) }
+    val automaticBackupPreferences by lazy { AutomaticBackupPreferences(this) }
+    val backupWorkScheduler by lazy { BackupWorkScheduler(this) }
+    val automaticBackups by lazy { AutomaticBackupCoordinator(backupService, automaticBackupPreferences, SafBackupDestination(this), backupWorkScheduler) }
 
     override fun onCreate() {
         super.onCreate()
         applicationScope.launch {
             preferences.settings.collectLatest(reminderScheduler::schedule)
+        }
+        applicationScope.launch {
+            runCatching { automaticBackups.reconcile(recoverInterrupted = true) }
+                .onFailure { error -> automaticBackupPreferences.update { it.copy(
+                    outcome = com.arete.app.backup.BackupOutcome.ERROR,
+                    detail = "No se pudo comprobar la programación de copias: ${error.message.orEmpty()}") } }
         }
     }
 

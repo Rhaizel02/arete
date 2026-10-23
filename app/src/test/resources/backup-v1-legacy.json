@@ -1,0 +1,17 @@
+{
+  "backupSchemaVersion": 1,
+  "exportedAt": 1800000000000,
+  "database": {
+    "exercises": [{"id":"legacy-exercise","nameEs":"Press banca","nameEn":"Bench Press","primaryMuscle":"Pecho","equipment":"Barra","createdAt":1,"updatedAt":2}],
+    "routines": [{"id":"legacy-routine","name":"Torso","isActive":true,"createdAt":1,"updatedAt":2}],
+    "workouts": [{"id":"legacy-workout","routineId":"legacy-routine","name":"Torso A","position":0,"createdAt":1,"updatedAt":2}],
+    "routineExercises": [{"id":"legacy-re","workoutId":"legacy-workout","exerciseId":"legacy-exercise","position":0,"restSeconds":120,"incrementKg":2.5,"notes":"","groupId":null,"createdAt":1,"updatedAt":2}],
+    "prescriptionSets": [{"id":"legacy-prescription","routineExerciseId":"legacy-re","position":0,"type":"WORK","repsMin":8,"repsMax":12}],
+    "workoutSessions": [{"id":"legacy-session","routineId":"legacy-routine","sourceWorkoutId":"legacy-workout","routineNameSnapshot":"Torso","workoutNameSnapshot":"Torso A","startedAt":1799996000000,"completedAt":1799999000000,"status":"COMPLETED"}],
+    "sessionExercises": [{"id":"legacy-se","sessionId":"legacy-session","exerciseId":"legacy-exercise","position":0,"exerciseNameEsSnapshot":"Press banca","exerciseNameEnSnapshot":"Bench Press","restSecondsSnapshot":120,"incrementKgSnapshot":2.5,"notesSnapshot":"","groupIdSnapshot":null}],
+    "sessionSets": [{"id":"legacy-set","sessionExerciseId":"legacy-se","position":0,"targetRepsMinSnapshot":8,"targetRepsMaxSnapshot":12,"isWarmupSnapshot":false,"weightKg":75.0,"reps":10,"rir":2,"isCompleted":true,"completedAt":1799999000000}],
+    "bodyWeights": [{"id":"legacy-weight","weightKg":79.0,"recordedAt":1799999000000}],
+    "skippedDays": []
+  },
+  "preferences": {"themeMode":"DARK","restTimerEnabled":false,"vibrationEnabled":true,"weeklyGoal":4,"remindersEnabled":false,"reminderHour":18,"reminderMinute":0,"weeklyPlan":[{"dayOfWeek":2,"workoutId":"legacy-workout"}]}
+}

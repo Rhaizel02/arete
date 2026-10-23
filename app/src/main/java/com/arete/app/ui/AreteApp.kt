@@ -114,17 +114,25 @@ fun AreteApp(viewModel: AreteViewModel) {
     val backupExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val content = viewModel.backupExportPayload
         if (uri != null && content != null) {
-            runCatching { context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(content) } }
-                .onSuccess { scope.launch { snackbar.showSnackbar("Backup exportado") } }
-                .onFailure { scope.launch { snackbar.showSnackbar("No se pudo guardar el backup") } }
+            scope.launch {
+                runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val output = context.contentResolver.openOutputStream(uri) ?: error("No se pudo abrir el archivo")
+                    output.bufferedWriter().use { it.write(content) }
+                } }.onSuccess { snackbar.showSnackbar("Backup exportado") }
+                    .onFailure { snackbar.showSnackbar("No se pudo guardar el backup") }
+            }
         }
         viewModel.backupExportPayload = null
     }
     val backupRestoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }
-                .onSuccess { raw -> if (raw != null) viewModel.pendingBackupRestore = raw }
-                .onFailure { scope.launch { snackbar.showSnackbar("No se pudo leer el backup") } }
+            scope.launch {
+                runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val input = context.contentResolver.openInputStream(uri) ?: error("No se pudo abrir el backup")
+                    input.bufferedReader().use { it.readText() }
+                } }.onSuccess { viewModel.pendingBackupRestore = it }
+                    .onFailure { snackbar.showSnackbar("No se pudo leer el backup") }
+            }
         }
     }
 

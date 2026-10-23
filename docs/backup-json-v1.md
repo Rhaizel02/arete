@@ -27,6 +27,8 @@ La semántica es reemplazo completo:
 
 1. se decodifica y valida versión, IDs, relaciones, posiciones, valores y preferencias sin escribir datos;
 2. se eliminan e insertan todas las tablas Room en una única transacción con claves foráneas activas;
-3. tras confirmar la transacción se aplican las preferencias mediante una única edición de DataStore.
+3. se aplican las preferencias mediante una edición de DataStore antes de confirmar Room; si falla, Room revierte y se compensan las preferencias previas.
 
-Un error de validación no modifica nada. Un fallo de Room revierte la transacción. Room y DataStore no ofrecen una transacción distribuida; el pequeño paso final de preferencias se realiza únicamente después de confirmar la base.
+Un error de validación no modifica nada. Un fallo de Room o de aplicación de preferencias revierte los datos fitness. Room y DataStore no ofrecen una transacción distribuida frente a una terminación abrupta del proceso; se documenta ese límite y cualquier fallo de compensación.
+
+El Bloque 6 reutiliza exactamente este contrato para copias externas automáticas y manuales verificadas. La carpeta SAF, activación, permisos y registro de retención son locales al dispositivo y no se exportan en `preferences`.

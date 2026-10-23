@@ -50,6 +50,13 @@ class AreteViewModel(
     private val planning: PlanningRepository,
     private val backup: BackupService
 ) : AndroidViewModel(application) {
+    private val app = application as AreteApplication
+    val automaticBackupState = app.automaticBackupPreferences.state
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.backup.AutomaticBackupState())
+    val immediateBackupPending = app.backupWorkScheduler.immediatePending
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val dailyBackupScheduled = app.backupWorkScheduler.dailyScheduled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     var routineExportPayload: String? = null
     val sessionSelections = androidx.compose.runtime.mutableStateMapOf<String, Pair<String, Int>>()
     var backupExportPayload: String? = null
@@ -209,9 +216,14 @@ class AreteViewModel(
     }
 
     fun restoreBackup(raw: String, onRestored: () -> Unit = {}) = launchAction("Backup restaurado") {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { backup.restore(raw) }
+        app.automaticBackups.restore(raw)
         onRestored()
     }
+
+    fun selectBackupFolder(uri: String, enable: Boolean) = launchAction { app.automaticBackups.selectFolder(uri, enable) }
+    fun setAutomaticBackupEnabled(enabled: Boolean) = launchAction { app.automaticBackups.setEnabled(enabled) }
+    fun createBackupNow() = launchAction { app.automaticBackups.requestNow() }
+    fun refreshBackupAccess() = launchAction { app.automaticBackups.reconcile() }
 
     fun showMessage(message: String) = viewModelScope.launch { _messages.emit(message) }
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Whitelist only user data. No automatic_backup DataStore, SAF grants or WorkManager DB. -->
+    <include domain="database" path="arete.db" />
+    <include domain="database" path="arete.db-wal" />
+    <include domain="database" path="arete.db-shm" />
+    <include domain="database" path="arete.db-journal" />
+    <include domain="file" path="datastore/preferences.preferences_pb" />
+</full-backup-content>

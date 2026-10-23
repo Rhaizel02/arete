@@ -141,13 +141,7 @@ fun SettingsScreen(
             }
             item {
                 TonalCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SectionHeading("Tus datos")
-                        Text("Routine JSON comparte una rutina. Backup JSON reemplaza y restaura toda la aplicación.", style = MaterialTheme.typography.bodySmall)
-                        PrimaryAction(onClick = onExportBackup, modifier = Modifier.fillMaxWidth()) { Text("Exportar backup completo") }
-                        SecondaryAction(onClick = onRestoreBackup, Modifier.fillMaxWidth()) { Text("Restaurar backup") }
-                        Text("Restaurar reemplaza todos los datos locales. Se pedirá confirmación.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    BackupSettings(viewModel, onExportBackup, onRestoreBackup)
                 }
             }
         }
@@ -163,7 +157,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SettingSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = null)
