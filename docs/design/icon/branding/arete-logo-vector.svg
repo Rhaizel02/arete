@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+<title>Arete — monograma A</title>
+<defs>
+  <linearGradient id="blue" x1="0" y1="0" x2="0.95" y2="1"><stop offset="0" stop-color="#12c9f7"/><stop offset="0.44" stop-color="#168ffe"/><stop offset="1" stop-color="#0554ec"/></linearGradient>
+  <linearGradient id="cap" x1="0" y1="0" x2="0.78" y2="1"><stop offset="0" stop-color="#35e4f6"/><stop offset="0.6" stop-color="#199ffc"/><stop offset="1" stop-color="#1468e8"/></linearGradient>
+  <linearGradient id="fold" x1="0" y1="0" x2="1" y2="0.9"><stop offset="0" stop-color="#06317c"/><stop offset="0.25" stop-color="#0652bc"/><stop offset="0.65" stop-color="#128ff7"/><stop offset="1" stop-color="#1371f2"/></linearGradient>
+  <clipPath id="mark"><path d="M 23.000,80.095 L 51.646,30.259 C 52.509,28.611 52.980,27.905 54.628,27.905 C 56.276,27.905 56.904,28.925 57.689,30.416 L 85.000,80.095 L 68.441,80.095 L 56.433,53.804 C 55.727,52.313 55.491,50.665 54.942,50.978 C 54.157,50.822 52.901,53.019 52.273,54.275 L 42.228,75.151 C 40.501,78.368 38.539,80.095 35.243,80.095 Z"/></clipPath>
+</defs>
+<g clip-path="url(#mark)">
+ <path d="M 23.000,80.095 L 51.646,30.259 C 52.509,28.611 52.980,27.905 54.628,27.905 C 56.276,27.905 56.904,28.925 57.689,30.416 L 85.000,80.095 L 68.441,80.095 L 56.433,53.804 C 55.727,52.313 55.491,50.665 54.942,50.978 C 54.157,50.822 52.901,53.019 52.273,54.275 L 42.228,75.151 C 40.501,78.368 38.539,80.095 35.243,80.095 Z" fill="url(#blue)"/>
+ <path d="M 8.48,13.39 L 99.52,13.39 L 89.32,50.27 C 70.17,43.52 69.38,41.80 61.38,42.50 C 51.17,42.74 38.46,49.88 27.47,57.18 Z" fill="url(#cap)"/>
+ <path d="M 67.34,43.05 C 63.50,41.01 60.83,43.60 58.24,48.47 L 55.02,53.33 L 70.72,82.45 L 90.10,82.45 Z" fill="url(#fold)" opacity="0.96"/>
+</g>
+</svg>

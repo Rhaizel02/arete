@@ -70,6 +70,10 @@ import com.arete.app.data.PersonalRecord
 import com.arete.app.data.PrType
 import com.arete.app.data.ProgressDashboard
 import com.arete.app.data.PlanningDates
+import com.arete.app.data.PerformanceDelta
+import com.arete.app.data.performanceDelta
+import com.arete.app.data.sessionComparison
+import com.arete.app.data.periodComparison
 import com.arete.app.data.local.BodyWeightEntryEntity
 import java.util.Date
 import kotlin.math.max
@@ -77,8 +81,9 @@ import kotlin.math.max
 
 @Composable
 fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack: () -> Unit) {
-    val flow = remember(exerciseId) { viewModel.observeExerciseProgress(exerciseId) }
-    val progress by flow.collectAsStateWithLifecycle(initialValue = null)
+    val state by viewModel.filteredProgressState.collectAsStateWithLifecycle()
+    val period by viewModel.progressPeriod.collectAsStateWithLifecycle()
+    val progress = state.exercises.firstOrNull { it.exerciseId == exerciseId }
     Scaffold(topBar = {
         ScreenHeader(progress?.exerciseName ?: "Progreso del ejercicio", onBack, "RENDIMIENTO")
     }) { padding ->
@@ -92,6 +97,8 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { ProgressPeriodSelector(period) { viewModel.progressPeriod.value = it } }
+            item { Text("DATOS DEL PERÍODO · ${period.label.uppercase()}", style = MaterialTheme.typography.labelSmall) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -116,15 +123,30 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
             if (item.records.isNotEmpty()) item {
                 TonalCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Récords derivados", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("PR absolutos · todo el historial", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         item.records.forEach {
                             Text(prLabel(it.type), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
                             Text("${formatMetric(it.weightKg)} kg × ${it.reps} reps · ${uiDate(it.achievedAt)}", style = MaterialTheme.typography.bodyMedium)
+                            val current = it
+                            val previous = item.recordEvents.filter { event -> event.type == current.type && event.achievedAt < current.achievedAt &&
+                                (current.type != PrType.REPS_AT_WEIGHT || kotlin.math.abs(event.weightKg - current.weightKg) < .005) }.maxByOrNull { event -> event.achievedAt }
+                            DeltaLabel("Frente al PR anterior", performanceDelta(
+                                when(current.type) { PrType.MAX_WEIGHT -> current.weightKg; PrType.MAX_E1RM -> current.e1RmKg; PrType.REPS_AT_WEIGHT -> current.reps.toDouble() },
+                                previous?.let { mark -> when(mark.type) { PrType.MAX_WEIGHT -> mark.weightKg; PrType.MAX_E1RM -> mark.e1RmKg; PrType.REPS_AT_WEIGHT -> mark.reps.toDouble() } }
+                            ), if (current.type == PrType.REPS_AT_WEIGHT) "reps" else "kg")
                         }
                     }
                 }
             }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionHeading("Comparaciones de e1RM")
+                    DeltaLabel("Última sesión vs. anterior del período", sessionComparison(item.history))
+                    DeltaLabel("Primer vs. último registro válido", periodComparison(item.history))
+                }
+            }
             item { SectionHeading("Historial de sesiones") }
+            if (item.history.isEmpty()) item { Text("No hay sesiones en este período.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             items(item.history, key = { it.sessionId }) { point ->
                 EditorialRow {
                         Column(Modifier.weight(1f)) {
@@ -139,8 +161,23 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
 }
 
 @Composable
+private fun DeltaLabel(label: String, delta: PerformanceDelta?, unit: String = "kg") {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (delta == null) Text("Sin referencia comparable", style = MaterialTheme.typography.bodySmall)
+        else {
+            val direction = when { delta.amount > .0001 -> "↑ +"; delta.amount < -.0001 -> "↓ "; else -> "= " }
+            val percentage = delta.percent?.let { " · ${if (it > 0) "+" else ""}${uiNumber(it)}%" }.orEmpty()
+            Text("$direction${uiNumber(delta.amount)} $unit$percentage", style = MaterialTheme.typography.titleMedium,
+                color = if (delta.amount > .0001) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+@Composable
 fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
-    val state by viewModel.progressState.collectAsStateWithLifecycle()
+    val state by viewModel.filteredProgressState.collectAsStateWithLifecycle()
+    val period by viewModel.progressPeriod.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
@@ -157,10 +194,11 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { ProgressPeriodSelector(period) { viewModel.progressPeriod.value = it } }
             item {
                 TonalCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("ÚLTIMO REGISTRO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("ÚLTIMO REGISTRO DEL PERÍODO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(state.bodyWeightTrend.latestKg?.let { "${formatMetric(it)} kg" } ?: "Sin registros", style = MaterialTheme.typography.displaySmall)
                         state.bodyWeightTrend.movingAverageKg?.let {
                             val count = minOf(7, state.bodyWeights.size)
@@ -171,7 +209,7 @@ fun BodyWeightScreen(viewModel: AreteViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            if (state.bodyWeights.isEmpty()) item { EmptyState("Registra tu peso", "Una entrada rápida en kg basta para empezar a ver la tendencia.", "Añadir peso") { editing = null; showEditor = true } }
+            if (state.bodyWeights.isEmpty()) item { EmptyState("Sin registros en el período", "Prueba Todo o añade una entrada en kg para ver la tendencia.", "Añadir peso") { editing = null; showEditor = true } }
             if (state.bodyWeights.isNotEmpty()) item { SectionHeading("Registros") }
             items(state.bodyWeights.asReversed(), key = { it.id }) { entry ->
                 EditorialRow {

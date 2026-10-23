@@ -22,8 +22,10 @@ class DesignFixtureTest {
         val workout = WorkoutEntity("design-workout", "design-routine", "Torso A", 0, createdAt = now, updatedAt = now)
         val routineExercises = exercises.mapIndexed { i, e -> RoutineExerciseEntity("design-r$i", workout.id, e.id, i, 120, 2.5, "", if(i < 2) "A" else null, now, now) }
         val historyCount = (args.getString("historySessions")?.toIntOrNull() ?: 7).coerceIn(0, 7)
+        val progressFixture = args.getString("progressFixture") == "true"
+        val ageDays = listOf(220, 170, 100, 70, 40, 15, 3)
         val sessions = (0 until historyCount).map { i ->
-            val end = now - (7 - i) * 3 * 86_400_000L
+            val end = now - (if (progressFixture) ageDays[i] else (7 - i) * 3) * 86_400_000L
             WorkoutSessionEntity("design-s$i", "design-routine", workout.id, "Torso / Pierna", workout.name, end - 3_000_000, end, SessionStatus.COMPLETED)
         } + WorkoutSessionEntity("design-active", "design-routine", workout.id, "Torso / Pierna", workout.name, now - 20 * 60_000)
         val sessionExercises = sessions.flatMap { s -> exercises.mapIndexed { i, e -> SessionExerciseEntity("${s.id}-e$i", s.id, e.id, i, e.nameEs, "", 120, 2.5, "", if(i < 2) "A" else null) } }
@@ -40,7 +42,7 @@ class DesignFixtureTest {
             exercises, listOf(RoutineEntity("design-routine", "Torso / Pierna", true, now, now)), listOf(workout), routineExercises,
             routineExercises.flatMap { e -> (0..3).map { PrescriptionSetEntity("${e.id}-$it", e.id, it, SetType.WORK, 8, 12) } },
             sessions, sessionExercises, sets,
-            (0..6).map { BodyWeightEntryEntity("design-weight$it", 79.0 - it * .15, now - (6 - it) * 4 * 86_400_000L) }, emptyList()
+            (0..6).map { BodyWeightEntryEntity("design-weight$it", 79.0 - it * .15, now - (if (progressFixture) ageDays[it] else (6 - it) * 4) * 86_400_000L) }, emptyList()
         ))
         app.preferences.restore(BackupPreferences(themeMode = args.getString("theme") ?: "DARK", weeklyGoal = 3,
             weeklyPlan = (1..7).map { WeeklyPlanEntry(it, workout.id) }))

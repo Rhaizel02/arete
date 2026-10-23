@@ -37,6 +37,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arete.app.data.local.*
+import com.arete.app.data.ProgressMetrics
+import com.arete.app.data.ProgressSet
+import com.arete.app.data.PrType
 import com.arete.app.ui.theme.ActionBlue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,6 +51,7 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
     val flow = remember(sessionId) { viewModel.observeSession(sessionId) }
     val data by flow.collectAsStateWithLifecycle(initialValue = null)
     val vibration by viewModel.vibrationEnabled.collectAsStateWithLifecycle()
+    val confirmed by viewModel.progressState.collectAsStateWithLifecycle()
     val details = data?.session
     val session = details?.session
     val exercises = details?.orderedExercises().orEmpty()
@@ -117,6 +121,7 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
             exercises.getOrNull(index)?.let { current ->
                 item(key = current.exercise.id) {
                     SessionExerciseCard(current, current.exercise.exerciseId?.let { data?.lastPerformance?.get(it) }.orEmpty(), index, exercises.size, viewModel,
+                        confirmed.confirmedSets, session,
                         { onSubstitute(current.exercise.id) }, onAddExercise)
                 }
             }
@@ -145,13 +150,24 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
 
 @Composable
 private fun SessionExerciseCard(details: SessionExerciseWithSets, last: List<LastPerformanceRow>, index: Int, total: Int,
-    viewModel: AreteViewModel, onSubstitute: () -> Unit, onAddReplacement: () -> Unit) {
+    viewModel: AreteViewModel, confirmed: List<ProgressSet>, session: WorkoutSessionEntity,
+    onSubstitute: () -> Unit, onAddReplacement: () -> Unit) {
     val exercise = details.exercise
     var menu by remember { mutableStateOf(false) }
     var notes by remember { mutableStateOf(false) }
     var guide by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     val hasCompleted = details.sets.any { it.isCompleted }
+    val improvements = remember(details, confirmed, session.status) {
+        val history = confirmed.filter { it.exerciseId == exercise.exerciseId && it.sessionId != session.id }
+        details.sets.associate { set ->
+            val candidate = ProgressSet(session.id, session.startedAt, session.completedAt ?: System.currentTimeMillis(),
+                exercise.id, exercise.exerciseId, exercise.exerciseNameEsSnapshot, null, null, set.position,
+                set.targetRepsMinSnapshot, set.targetRepsMaxSnapshot, set.isWarmupSnapshot, set.isCompleted,
+                set.weightKg, set.reps, set.rir, set.isFailure)
+            set.id to ProgressMetrics.improvements(candidate, history)
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TonalCard {
             Row(verticalAlignment = Alignment.Top) {
@@ -186,7 +202,16 @@ private fun SessionExerciseCard(details: SessionExerciseWithSets, last: List<Las
             listOf("KG", "REPS", "RIR").forEach { Text(it, Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall) }
             Text("LISTO", Modifier.width(48.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
         }
-        details.orderedSets().forEachIndexed { number, set -> key(set.id) { SessionSetRow(number + 1, details.sets.size, set, viewModel) } }
+        details.orderedSets().forEachIndexed { number, set -> key(set.id) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SessionSetRow(number + 1, details.sets.size, set, viewModel)
+                improvements[set.id]?.takeIf { it.isNotEmpty() }?.let { types ->
+                    Text((if (session.status == SessionStatus.IN_PROGRESS) "↑ Provisional" else "↑ Mejora confirmada") + " · " + types.joinToString(" · ") {
+                        when(it) { PrType.MAX_WEIGHT -> "más peso"; PrType.MAX_E1RM -> "mayor e1RM"; PrType.REPS_AT_WEIGHT -> "más reps al mismo peso" }
+                    }, Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                }
+            }
+        } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(onClick = { viewModel.addSessionSet(exercise.id) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.primary)) { Icon(Icons.Default.Add, null); Text("Añadir serie") }

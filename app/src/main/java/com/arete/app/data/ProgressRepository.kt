@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
 import java.util.Calendar
 import java.util.UUID
 
@@ -32,7 +33,8 @@ data class ExerciseProgress(
     val bestE1RmKg: Double?,
     val recentE1RmChangeKg: Double?,
     val history: List<ExerciseSessionPoint>,
-    val records: List<PersonalRecord>
+    val records: List<PersonalRecord>,
+    val recordEvents: List<PersonalRecord> = emptyList()
 )
 
 data class MuscleSetCount(val muscle: String, val sets: Int)
@@ -54,7 +56,8 @@ data class ProgressDashboard(
     val latestRecord: PersonalRecord? = null,
     val suggestions: List<ProgressionSuggestion> = emptyList(),
     val bodyWeights: List<BodyWeightEntryEntity> = emptyList(),
-    val bodyWeightTrend: BodyWeightTrend = BodyWeightTrend(null, null, null)
+    val bodyWeightTrend: BodyWeightTrend = BodyWeightTrend(null, null, null),
+    val confirmedSets: List<ProgressSet> = emptyList()
 )
 
 class ProgressRepository(
@@ -64,14 +67,18 @@ class ProgressRepository(
 ) {
     private val dao = database.progressDao()
 
-    fun dashboard(weeklyGoal: Flow<Int>): Flow<ProgressDashboard> = combine(
+    fun dashboard(weeklyGoal: Flow<Int>, period: Flow<ProgressPeriod> = flowOf(ProgressPeriod.ALL)): Flow<ProgressDashboard> = combine(
         dao.observePerformanceSets(),
         database.sessionDao().observeCompletedSessionHeaders(),
         dao.observeBodyWeights(),
         weeklyGoal,
         PlanningDates.dayChanges(now)
     ) { rows, sessions, weights, goal, _ ->
-        buildDashboard(rows.map(::toProgressSet), sessions, weights, goal)
+        buildDashboard(rows.map(::toProgressSet), sessions, weights, goal) to sessions
+    }.combine(period) { (absolute, sessions), selected ->
+        if (selected == ProgressPeriod.ALL) absolute else buildDashboard(
+            absolute.confirmedSets, sessions, absolute.bodyWeights, absolute.weekly.goal, selected, absolute
+        )
     }
 
     fun observeExerciseProgress(exerciseId: String): Flow<ExerciseProgress?> =
@@ -116,22 +123,36 @@ class ProgressRepository(
         sets: List<ProgressSet>,
         sessions: List<WorkoutSessionEntity>,
         weights: List<BodyWeightEntryEntity>,
-        goal: Int
+        goal: Int,
+        period: ProgressPeriod = ProgressPeriod.ALL,
+        absolute: ProgressDashboard? = null
     ): ProgressDashboard {
-        val recordEvents = ProgressMetrics.allRecordEvents(sets)
-        val weekly = ProgressMetrics.weeklyConsistency(
+        val timestamp = now()
+        val start = period.start(timestamp) ?: Long.MIN_VALUE
+        fun inPeriod(date: Long) = date in start..timestamp
+        val periodSets = sets.filter { inPeriod(it.sessionCompletedAt) }
+        val periodSessions = sessions.filter { it.completedAt?.let(::inPeriod) == true }
+        val periodWeights = weights.filter { inPeriod(it.recordedAt) }.sortedBy { it.recordedAt }
+        val recordEvents = absolute?.exercises?.flatMap { it.recordEvents } ?: ProgressMetrics.allRecordEvents(sets)
+        val absoluteExercises = absolute?.exercises ?: buildExerciseProgress(sets, recordEvents)
+        val filteredExercises = (if (periodSets.size == sets.size) absoluteExercises else buildExerciseProgress(periodSets, recordEvents)).associateBy { it.exerciseId }
+        val weekly = absolute?.weekly ?: ProgressMetrics.weeklyConsistency(
             sessions.mapNotNull { it.completedAt }, goal, now()
         )
         return ProgressDashboard(
             weekly = weekly,
-            exercises = buildExerciseProgress(sets, recordEvents),
-            stats = buildStats(sets, sessions, weekly),
+            exercises = absoluteExercises.map { absolute -> filteredExercises[absolute.exerciseId]?.copy(
+                records = absolute.records, recordEvents = absolute.recordEvents
+            ) ?: absolute.copy(sessionCount = 0, maxWeightKg = null, bestWeightKg = null, bestReps = null,
+                bestE1RmKg = null, recentE1RmChangeKg = null, history = emptyList()) },
+            stats = buildStats(periodSets, periodSessions, period, timestamp),
             latestRecord = recordEvents.maxWithOrNull(
                 compareBy<PersonalRecord> { it.achievedAt }.thenBy { recordPriority(it.type) }
             ),
-            suggestions = ProgressMetrics.progressionSuggestions(sets),
-            bodyWeights = weights.sortedBy { it.recordedAt },
-            bodyWeightTrend = ProgressMetrics.bodyWeightTrend(weights.sortedBy { it.recordedAt }.map { it.weightKg })
+            suggestions = absolute?.suggestions ?: ProgressMetrics.progressionSuggestions(sets),
+            bodyWeights = periodWeights,
+            bodyWeightTrend = ProgressMetrics.bodyWeightTrend(periodWeights.map { it.weightKg }),
+            confirmedSets = sets
         )
     }
 
@@ -170,7 +191,8 @@ class ProgressRepository(
                 history = points.asReversed(),
                 records = records.filter { it.exerciseId == exerciseId }.groupBy { it.type }
                     .mapNotNull { (_, typeRecords) -> typeRecords.maxByOrNull { it.achievedAt } }
-                    .sortedBy { recordPriority(it.type) }
+                    .sortedBy { recordPriority(it.type) },
+                recordEvents = records.filter { it.exerciseId == exerciseId }
             )
         }
         .sortedByDescending { it.lastPerformedAt }
@@ -178,7 +200,8 @@ class ProgressRepository(
     private fun buildStats(
         sets: List<ProgressSet>,
         sessions: List<WorkoutSessionEntity>,
-        weekly: WeeklyConsistency
+        period: ProgressPeriod,
+        timestamp: Long
     ): GeneralStats {
         val effective = sets.filter(ProgressMetrics::isEffectiveWorkSet)
         val reliableDurations = sessions.mapNotNull { session ->
@@ -190,7 +213,7 @@ class ProgressRepository(
             .map { MonthActivity(it.key, it.value) }.sortedBy { it.monthStart }.takeLast(6)
         return GeneralStats(
             totalWorkouts = sessions.size,
-            workoutsPerWeek = weekly.recentWeeks.map { it.workouts }.averageOrZero(),
+            workoutsPerWeek = sessions.size / period.weeks(timestamp, sessions.mapNotNull { it.completedAt }.minOrNull()),
             averageDurationMinutes = reliableDurations.takeIf { it.isNotEmpty() }
                 ?.average()?.div(60_000.0)?.toInt(),
             effectiveWorkSets = effective.size,

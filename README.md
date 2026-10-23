@@ -40,6 +40,8 @@ El destino **Progreso** resume actividad reciente, objetivo semanal, racha, PR, 
 
 El e1RM usa Epley (`peso × (1 + repeticiones / 30)`) y solo admite series de trabajo completadas de 1 a 12 repeticiones. Los PR cubren mayor peso, mayor e1RM estimado y más repeticiones para un peso. La racha cuenta semanas de lunes a domingo que alcanzan el objetivo; una semana actual incompleta no rompe prematuramente la racha anterior.
 
+Progreso 2.0 añade períodos de 1/3/6 meses y Todo, gráficas con selección táctil y controles accesibles, comparaciones entre sesiones y mejoras provisionales durante el entrenamiento. Los PR absolutos permanecen separados de las métricas del período. El icono aprobado incluye capas adaptativas, variante temática y PNG por densidad. Semántica y evidencias: [Bloque 5](docs/design/validation-block-5/README.md).
+
 ## Planificación y backup
 
 La planificación semanal asigna workouts orientativos a días, sin cambiar la secuencia real de la rutina. **Hoy no entreno** registra un día omitido independiente, reversible y sin crear sesiones falsas. La vista Actividad distingue entrenamientos, días pendientes, omitidos y no planificados.

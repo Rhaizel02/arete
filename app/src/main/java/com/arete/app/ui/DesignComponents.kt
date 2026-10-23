@@ -10,6 +10,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import com.arete.app.data.ProgressPeriod
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusDirection
@@ -60,8 +65,10 @@ data class ChartValue(val timestamp: Long, val value: Double)
 
 @Composable
 fun StaticTrendChart(points: List<ChartValue>, unit: String, modifier: Modifier = Modifier) {
-    val sorted = points.sortedBy { it.timestamp }
+    val sorted = points.filter { it.value.isFinite() }.sortedBy { it.timestamp }
     if (sorted.isEmpty()) { Text("Aún no hay datos representativos", style = MaterialTheme.typography.bodySmall); return }
+    var selectedIndex by rememberSaveable(sorted) { mutableIntStateOf(sorted.lastIndex) }
+    val selected = sorted[selectedIndex]
     val color = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f)
     val min = sorted.minOf { it.value }
@@ -71,10 +78,21 @@ fun StaticTrendChart(points: List<ChartValue>, unit: String, modifier: Modifier 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("${uiNumber(min)}–${uiNumber(max)} $unit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${uiNumber(last.value)} $unit", style = MaterialTheme.typography.labelLarge, color = color)
+            Text("Último: ${uiNumber(last.value)} $unit", style = MaterialTheme.typography.labelLarge, color = color)
         }
-        Canvas(Modifier.fillMaxWidth().height(120.dp).semantics {
-            contentDescription = "Evolución: ${sorted.size} registros, de ${uiNumber(first.value)} a ${uiNumber(last.value)} $unit, ${uiDate(first.timestamp)} a ${uiDate(last.timestamp)}"
+        Canvas(Modifier.fillMaxWidth().height(140.dp).pointerInput(sorted) {
+            detectTapGestures { tap ->
+                val inset = 5.dp.toPx()
+                val duration = (last.timestamp - first.timestamp).coerceAtLeast(1)
+                selectedIndex = sorted.indices.minBy { index ->
+                    val point = sorted[index]
+                    val x = if (sorted.size == 1) size.width / 2f else inset + ((point.timestamp - first.timestamp).toDouble() / duration * (size.width - 2 * inset)).toFloat()
+                    val y = if (max == min) size.height / 2f else inset + (size.height - 2 * inset) * (1 - (point.value - min) / span).toFloat()
+                    (x - tap.x) * (x - tap.x) + (y - tap.y) * (y - tap.y)
+                }
+            }
+        }.semantics {
+            contentDescription = "Evolución: ${sorted.size} ${if (sorted.size == 1) "registro" else "registros"}, de ${uiNumber(first.value)} a ${uiNumber(last.value)} $unit, ${uiDate(first.timestamp)} a ${uiDate(last.timestamp)}"
         }) {
             val inset = 5.dp.toPx()
             val width = size.width - inset * 2; val height = size.height - inset * 2
@@ -85,11 +103,44 @@ fun StaticTrendChart(points: List<ChartValue>, unit: String, modifier: Modifier 
                 if (max == min) size.height / 2 else inset + height - ((point.value - min) / span * height).toFloat()
             ) }
             offsets.zipWithNext().forEach { (a,b) -> drawLine(ActionBlue, a, b, 2.dp.toPx(), StrokeCap.Round) }
-            offsets.forEachIndexed { index, point -> drawCircle(ActionBlue, if (index == offsets.lastIndex) 4.dp.toPx() else 2.dp.toPx(), point) }
+            offsets.forEachIndexed { index, point ->
+                if (index == selectedIndex) drawCircle(color.copy(alpha = .18f), 10.dp.toPx(), point)
+                drawCircle(color, if (index == selectedIndex) 5.dp.toPx() else 2.dp.toPx(), point)
+            }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(uiDate(first.timestamp), style = MaterialTheme.typography.labelSmall)
             if (sorted.size > 1) Text(uiDate(last.timestamp), style = MaterialTheme.typography.labelSmall)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { selectedIndex-- }, enabled = selectedIndex > 0,
+                contentPadding = PaddingValues(4.dp)) { Text("Anterior") }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${uiNumber(selected.value)} $unit", style = MaterialTheme.typography.titleMedium)
+                Text("${uiDate(selected.timestamp)} · ${selectedIndex + 1}/${sorted.size}", style = MaterialTheme.typography.labelSmall)
+            }
+            TextButton(onClick = { selectedIndex++ }, enabled = selectedIndex < sorted.lastIndex,
+                contentPadding = PaddingValues(4.dp)) { Text("Posterior") }
+        }
+    }
+}
+
+@Composable
+fun ProgressPeriodSelector(selected: ProgressPeriod, onSelect: (ProgressPeriod) -> Unit) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        ProgressPeriod.entries.forEachIndexed { index, period ->
+            SegmentedButton(selected = selected == period, onClick = { onSelect(period) },
+                shape = SegmentedButtonDefaults.itemShape(index, ProgressPeriod.entries.size),
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+                    activeContentColor = MaterialTheme.colorScheme.primary,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    activeBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    inactiveBorderColor = MaterialTheme.colorScheme.outlineVariant),
+                icon = {}, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(period.label, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }

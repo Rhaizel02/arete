@@ -22,3 +22,10 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 
 - Filtros avanzados de período y gráficas interactivas completas: no incluidos por el prompt de implementación del Bloque B.
 - Ningún avatar, perfil o notificación decorativa ni métricas simuladas se considera funcionalidad aprobada.
+
+## Bloque 5 — Progreso 2.0
+
+- Se incorporan los filtros básicos de 1/3/6 meses y Todo, selección de puntos de gráficas, comparaciones históricas y señales provisionales de mejora autorizadas por este bloque.
+- Icono definitivo del paquete aprobado, sin generar otra identidad.
+- Siguen fuera de alcance zoom, gestos avanzados, backup automático, catálogo multimedia nuevo, Health Connect, integraciones y coaching adaptativo.
+- P2 previos conservados: notificación del temporizador si Android termina el proceso y matching avanzado de precarga ante cambios fuertes de estructura de series.

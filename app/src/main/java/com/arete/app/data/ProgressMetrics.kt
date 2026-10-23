@@ -75,6 +75,23 @@ data class BodyWeightTrend(
 )
 
 object ProgressMetrics {
+    /** Ephemeral: candidate must be saved as completed; confirmed history never includes an active session. */
+    fun improvements(candidate: ProgressSet, confirmedHistory: List<ProgressSet>): List<PrType> {
+        if (!isEffectiveWorkSet(candidate) || !validWeightAndReps(candidate) || candidate.exerciseId == null) return emptyList()
+        val prior = confirmedHistory.filter {
+            it.exerciseId == candidate.exerciseId && it.sessionId != candidate.sessionId &&
+                it.sessionCompletedAt < candidate.sessionCompletedAt && isEffectiveWorkSet(it) && validWeightAndReps(it)
+        }
+        if (prior.isEmpty()) return emptyList()
+        return recordsForSession(prior + candidate, candidate.sessionId).map { it.type }.filter { type ->
+            when (type) {
+                PrType.MAX_WEIGHT -> true
+                PrType.MAX_E1RM -> prior.any { e1Rm(it) != null }
+                PrType.REPS_AT_WEIGHT -> prior.any { weightKey(it.weightKg!!) == weightKey(candidate.weightKg!!) }
+            }
+        }
+    }
+
     fun isEffectiveWorkSet(set: ProgressSet): Boolean =
         set.isCompleted && !set.isWarmup && (set.reps ?: 0) > 0
 

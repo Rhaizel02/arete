@@ -68,6 +68,9 @@ class AreteViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val progressState = progress.dashboard(preferences.weeklyGoal)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.ProgressDashboard())
+    val progressPeriod = kotlinx.coroutines.flow.MutableStateFlow(com.arete.app.data.ProgressPeriod.ALL)
+    val filteredProgressState = progress.dashboard(preferences.weeklyGoal, progressPeriod)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.ProgressDashboard())
     val planningState = planning.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.PlanningState())
 

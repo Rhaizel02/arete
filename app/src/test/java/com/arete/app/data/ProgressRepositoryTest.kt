@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.arete.app.data.local.AreteDatabase
 import com.arete.app.data.local.ExerciseEntity
+import com.arete.app.data.local.BodyWeightEntryEntity
+import com.arete.app.data.local.WorkoutSessionEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -95,6 +97,45 @@ class ProgressRepositoryTest {
         dashboard = progress.dashboard(flowOf(3)).first()
         assertEquals(1, dashboard.bodyWeights.size)
         assertNull(dashboard.bodyWeightTrend.recentChangeKg)
+    }
+
+    @Test
+    fun periodStatsWeightsAndComparisonsRecalculateButAbsolutePrRemainsHistorical() = runTest {
+        database.exerciseDao().upsert(exercise())
+        val first = sessions.startFreeWorkout()
+        val firstExercise = sessions.addExercise(first, "bench")
+        val firstSet = database.sessionDao().getSets(firstExercise).first()
+        sessions.updateSet(firstSet.copy(weightKg = 100.0, reps = 10))
+        sessions.completeSet(database.sessionDao().getSet(firstSet.id)!!, false)
+        clock += 60_000
+        sessions.finishSession(database.sessionDao().getSession(first)!!.session)
+        progress.saveBodyWeight(null, 80.0)
+        clock += 40L * 86_400_000
+        val second = sessions.startFreeWorkout()
+        val secondExercise = sessions.addExercise(second, "bench")
+        val secondSet = database.sessionDao().getSets(secondExercise).first()
+        sessions.updateSet(secondSet.copy(weightKg = 80.0, reps = 8))
+        sessions.completeSet(database.sessionDao().getSet(secondSet.id)!!, false)
+        // Active sets do not feed confirmed history, even if completed.
+        assertEquals(1, progress.dashboard(flowOf(3)).first().confirmedSets.count { it.isCompleted && !it.isWarmup })
+        clock += 60_000
+        sessions.finishSession(database.sessionDao().getSession(second)!!.session)
+        progress.saveBodyWeight(null, 79.0)
+        var filtered = progress.dashboard(flowOf(3), flowOf(ProgressPeriod.MONTH)).first()
+        assertEquals(1, filtered.stats.totalWorkouts)
+        assertEquals(1, filtered.stats.effectiveWorkSets)
+        assertEquals(79.0, filtered.bodyWeights.single().weightKg, 0.0)
+        assertEquals(80.0, filtered.exercises.single().maxWeightKg!!, 0.0)
+        assertEquals(100.0, filtered.exercises.single().records.first { it.type == PrType.MAX_WEIGHT }.weightKg, 0.0)
+        assertNull(sessionComparison(filtered.exercises.single().history))
+        sessions.updateSet(database.sessionDao().getSet(secondSet.id)!!.copy(weightKg = 85.0))
+        filtered = progress.dashboard(flowOf(3), flowOf(ProgressPeriod.MONTH)).first()
+        assertEquals(85.0, filtered.exercises.single().maxWeightKg!!, 0.0)
+        sessions.deleteSession(database.sessionDao().getSession(second)!!.session)
+        filtered = progress.dashboard(flowOf(3), flowOf(ProgressPeriod.MONTH)).first()
+        assertEquals(0, filtered.stats.totalWorkouts)
+        assertTrue(filtered.exercises.single().history.isEmpty())
+        assertEquals(100.0, filtered.exercises.single().records.first { it.type == PrType.MAX_WEIGHT }.weightKg, 0.0)
     }
 
     private fun exercise() = ExerciseEntity(
