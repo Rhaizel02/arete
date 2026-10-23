@@ -1,5 +1,7 @@
 # Bloque 7 — Catálogo 2.0
 
+Esta página documenta la entrega original del Bloque 7. La **cobertura actual, 45/45 guías ES/EN y 9 ejercicios ilustrados**, está en [Bloque 8 y matriz actualizada](block-8-catalog.md); las cifras inferiores son históricas del Bloque 7.
+
 Base: `ad8c7d54a991f61db130ed38310ee3b1017d5eb4`. Se mantiene el catálogo de 45 ejercicios y todos sus IDs. No cambia ExerciseEntity, Room v2, Routine JSON v1, Backup JSON v1, motor, historial ni snapshots.
 
 ## Búsqueda y presentación

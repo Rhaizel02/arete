@@ -36,8 +36,8 @@ class CatalogFixtureTest {
         val catalog = app.database.exerciseDao().getAll()
         val manifest = app.assets.open("exercise_editorial.json").bufferedReader().use { EditorialManifest.decode(it.readText()) }
         assertEquals(46, catalog.size)
-        assertEquals(10, catalog.count { manifest.forExercise(it) != null })
-        assertEquals(3, catalog.count { manifest.forExercise(it)?.illustrations?.isNotEmpty() == true })
+        assertEquals(45, catalog.count { manifest.forExercise(it) != null })
+        assertEquals(9, catalog.count { manifest.forExercise(it)?.illustrations?.isNotEmpty() == true })
         assertEquals(listOf("qa-custom-band"), filterExercises(catalog, "home", "Espalda", "Banda casera").map { it.id })
         assertEquals("Mi instrucción personal: ancla la banda, fija el tronco y tira con control.", app.repository.getExercise("qa-custom-band")!!.instructions)
         val active = app.database.sessionDao().getActiveSession()!!

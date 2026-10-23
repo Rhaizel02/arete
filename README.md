@@ -94,3 +94,7 @@ Validación funcional, compatibilidad y capturas reales: [Bloque B](docs/design/
 ## Catálogo 2.0 — Bloque 7
 
 Búsqueda ES/EN combinada con filtros locales de músculo y equipamiento, diez guías técnicas bilingües y tres ejercicios ilustrados offline (seis posiciones). Las ilustraciones son de **Everkinetic**, distribuidas por **wger**, bajo **[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)**; se redimensionaron/convertieron a WebP sin cambios de estilo y conservan esa licencia. [Créditos y originales](docs/licenses/exercise-art.md), [formato editorial y cobertura de los 45 ejercicios](docs/block-7-catalog.md), [validación real](docs/design/validation-block-7/README.md).
+
+## Catálogo completo — Bloque 8
+
+La cobertura actual es **45/45 guías ampliadas ES/EN y 9/45 ejercicios ilustrados (18 posiciones)**. Se añaden seis pares de ilustraciones Everkinetic: cinco desde su fuente original bajo CC BY-SA 4.0 y uno vía wger bajo CC BY-SA 3.0, conservando créditos y licencias por archivo. Se priorizan las instrucciones, con ilustraciones y referencias desplegables; cada catálogo/selector tiene sus propios filtros. [Fuentes, investigación, cobertura y límites](docs/block-8-catalog.md), [créditos](docs/licenses/exercise-art.md) y [validación](docs/design/validation-block-8/README.md).

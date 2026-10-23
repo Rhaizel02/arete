@@ -30,14 +30,15 @@ class ExerciseEditorialTest {
     private fun exercise(id: String = "arete-barbell-bench-press", name: String = "Press de banca", english: String = "Bench Press", muscle: String = "Pecho", equipment: String = "Barra", custom: Boolean = false) =
         ExerciseEntity(id, name, english, muscle, equipment = equipment, isCustom = custom, instructions = "Mi instrucción", createdAt = 1, updatedAt = 1)
 
-    @Test fun manifestCoversExactlyTenStableIdsWithoutChangingThe45ExerciseCatalog() {
+    @Test fun manifestCoversAll45StableIdsWithoutChangingTheCatalog() {
         val editorial = manifest()
         val catalog = context.assets.open("exercises_catalog.json").bufferedReader().use { Json.parseToJsonElement(it.readText()).jsonArray }
         val ids = catalog.map { it.jsonObject.getValue("id").jsonPrimitive.content }.toSet()
         assertEquals(45, ids.size)
-        assertEquals(10, editorial.exercises.size)
+        assertEquals(45, editorial.exercises.size)
+        assertEquals(ids, editorial.exercises.map { it.exerciseId }.toSet())
         assertTrue(editorial.exercises.all { it.exerciseId in ids && it.text.keys == setOf("es", "en") })
-        assertEquals(3, editorial.exercises.count { it.illustrations.isNotEmpty() })
+        assertEquals(9, editorial.exercises.count { it.illustrations.isNotEmpty() })
         assertTrue(editorial.sources.any { it.kind == "general-evidence" && it.url.endsWith("MSS.0000000000003897") })
         assertTrue(editorial.exercises.all { entry -> entry.sourceIds.any { id -> editorial.sources.any { it.id == id && it.kind == "practical-technique" } } })
     }
@@ -53,14 +54,14 @@ class ExerciseEditorialTest {
         assertEquals(listOf("Banda casera", "Barra"), catalogFilterOptions(listOf("Barra", "barra", "", "Banda casera")))
     }
 
-    @Test fun customMissingAndBasicExercisesKeepTheirOwnContent() {
+    @Test fun customAndMissingExercisesKeepTheirOwnContent() {
         val editorial = manifest()
         val custom = exercise(custom = true)
         assertNull(editorial.forExercise(custom)) // Even a misleading ID must not replace a custom guide.
         assertEquals("Mi instrucción", custom.instructions)
         assertNull(editorial.forExercise(null))
         assertNull(editorial.forExercise(exercise("missing")))
-        assertNull(editorial.forExercise(exercise("arete-push-up")))
+        assertNotNull(editorial.forExercise(exercise("arete-push-up")))
         assertTrue(editorial.forExercise(exercise("arete-pull-up"))!!.illustrations.isEmpty())
     }
 
@@ -74,7 +75,8 @@ class ExerciseEditorialTest {
 
     @Test fun artworkIsLocalDecodableSmallAndHasExplicitCredits() {
         val images = manifest().exercises.flatMap { it.illustrations }
-        assertEquals(6, images.size)
+        assertEquals(18, images.size)
+        assertEquals(images.size, images.map { it.resource }.distinct().size)
         images.forEach { art ->
             val resource = artworkResource(art.resource)
             assertNotNull(resource)
@@ -83,10 +85,26 @@ class ExerciseEditorialTest {
             assertTrue(bitmap.width <= 512 && bitmap.height <= 512)
             bitmap.recycle()
             assertTrue(art.author.contains("Everkinetic"))
-            assertEquals("CC BY-SA 3.0", art.license)
+            assertTrue(art.license in setOf("CC BY-SA 3.0", "CC BY-SA 4.0"))
+            assertTrue(art.altText("en").isNotBlank() && art.captionText("en").isNotBlank())
             assertTrue(isWebLink(art.sourceUrl) && isWebLink(art.licenseUrl))
         }
         assertNull(artworkResource("nonexistent"))
+    }
+
+    @Test fun everyGuideHasCompleteDistinctBilingualSectionsAndTraceableTechnique() {
+        val editorial = manifest()
+        editorial.exercises.forEach { entry ->
+            assertEquals(setOf("es", "en"), entry.text.keys)
+            assertNotEquals(entry.text.getValue("es"), entry.text.getValue("en"))
+            entry.text.values.forEach { text ->
+                assertTrue(text.steps.size >= 2)
+                listOf(text.setup, text.steps, text.cues, text.mistakes, text.muscles).forEach { lines ->
+                    assertTrue(lines.isNotEmpty() && lines.all { it.isNotBlank() })
+                }
+            }
+            assertTrue(entry.sourceIds.all { id -> editorial.sources.any { it.id == id && isWebLink(it.url) } })
+        }
     }
 
     @Test fun manifestRejectsDuplicateIdsAndBrokenReferences() {

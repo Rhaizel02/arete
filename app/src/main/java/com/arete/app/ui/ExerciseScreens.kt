@@ -50,6 +50,7 @@ import com.arete.app.data.ExerciseDraft
 import com.arete.app.data.local.ExerciseEntity
 import com.arete.app.catalog.ExerciseIllustration
 import com.arete.app.catalog.catalogFilterOptions
+import com.arete.app.catalog.filterExercises
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -101,11 +102,13 @@ private fun ExerciseCatalogScaffold(
     onEditCustom: (String) -> Unit,
     selectionMode: Boolean
 ) {
-    val exercises by viewModel.exercises.collectAsStateWithLifecycle()
-    val query by viewModel.exerciseQuery.collectAsStateWithLifecycle()
-    val muscle by viewModel.exerciseMuscle.collectAsStateWithLifecycle()
-    val equipment by viewModel.exerciseEquipment.collectAsStateWithLifecycle()
+    // Each visit/selector owns its criteria. Rotation preserves them; another destination never inherits them.
+    var query by rememberSaveable(title) { mutableStateOf("") }
+    var muscle by rememberSaveable(title) { mutableStateOf<String?>(null) }
+    var equipment by rememberSaveable(title) { mutableStateOf<String?>(null) }
     val allExercises by viewModel.allExercises.collectAsStateWithLifecycle()
+    val exercises = remember(allExercises, query, muscle, equipment) { filterExercises(allExercises, query, muscle, equipment) }
+    fun clearFilters() { query = ""; muscle = null; equipment = null }
     val editorial by viewModel.exerciseEditorial.collectAsStateWithLifecycle()
     val muscles = remember(allExercises) { catalogFilterOptions(allExercises.map { it.primaryMuscle }) }
     val equipmentOptions = remember(allExercises) { catalogFilterOptions(allExercises.map { it.equipment }) }
@@ -125,7 +128,7 @@ private fun ExerciseCatalogScaffold(
         Column(Modifier.fillMaxSize().padding(padding)) {
             AreteField(
                 value = query,
-                onValueChange = { viewModel.exerciseQuery.value = it },
+                onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Buscar en español o inglés") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
@@ -139,22 +142,22 @@ private fun ExerciseCatalogScaffold(
             ) {
                 item(key = "catalog-filters") {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CatalogFilterMenu("Músculo", muscle, muscles, { viewModel.exerciseMuscle.value = it }, Modifier.weight(1f))
-                        CatalogFilterMenu("Equipo", equipment, equipmentOptions, { viewModel.exerciseEquipment.value = it }, Modifier.weight(1f))
+                        CatalogFilterMenu("Músculo", muscle, muscles, { muscle = it }, Modifier.weight(1f))
+                        CatalogFilterMenu("Equipo", equipment, equipmentOptions, { equipment = it }, Modifier.weight(1f))
                     }
                 }
                 item(key = "catalog-result-count") {
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("${exercises.size} ${if (exercises.size == 1) "ejercicio" else "ejercicios"}", Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
                             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (filtered) TextButton(onClick = viewModel::clearExerciseFilters) { Text("Limpiar filtros") }
-                        else Text("Sin conexión", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (filtered) TextButton(onClick = ::clearFilters) { Text("Limpiar filtros") }
+                        else Text("Guías locales", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 if (exercises.isEmpty()) item(key = "catalog-empty") {
                     Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         EmptyState("Sin resultados", "Prueba otra búsqueda o crea un ejercicio personalizado.")
-                        if (filtered) SecondaryAction(onClick = viewModel::clearExerciseFilters) { Text("Mostrar todos") }
+                        if (filtered) SecondaryAction(onClick = ::clearFilters) { Text("Mostrar todos") }
                     }
                 } else {
                     items(exercises, key = { "exercise:${it.id}" }) { exercise ->

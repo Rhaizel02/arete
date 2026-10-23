@@ -30,6 +30,8 @@ fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, title: String = "
     val manifest by viewModel.exerciseEditorial.collectAsStateWithLifecycle()
     val editorial = manifest?.forExercise(exercise)
     var language by rememberSaveable(id) { mutableStateOf("es") }
+    var showArtwork by rememberSaveable(id) { mutableStateOf(false) }
+    var showReferences by rememberSaveable(id) { mutableStateOf(false) }
     val localized = editorial?.localized(language)
     val english = localized?.first == "en"
     val scroll = rememberScrollState()
@@ -57,14 +59,29 @@ fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, title: String = "
                         if ("en" in editorial.text) FilterChip(selected = english, onClick = { language = "en" }, label = { Text("English") })
                     }
                     Text(if (english) "Offline guide · Arete editorial" else "Guía offline · Editorial Arete", style = MaterialTheme.typography.labelSmall)
-                    GuideIllustrations(editorial, localized.first)
                     val text = localized.second
                     GuideSection(if (english) "Preparation" else "Preparación", text.setup)
                     GuideSection(if (english) "Execution" else "Ejecución", text.steps, numbered = true)
                     GuideSection(if (english) "Technique cues" else "Indicaciones técnicas", text.cues)
+                    if (editorial.illustrations.isNotEmpty()) {
+                        SecondaryAction(onClick = { showArtwork = !showArtwork }) {
+                            Text(if (english) "${if (showArtwork) "Hide" else "View"} illustrations (${editorial.illustrations.size})"
+                                else "${if (showArtwork) "Ocultar" else "Ver"} ilustraciones (${editorial.illustrations.size})")
+                        }
+                        if (showArtwork) {
+                            GuideIllustrations(editorial, localized.first)
+                            Text(editorial.illustrations.distinctBy { it.author to it.license }.joinToString(" · ") { "${it.author} · ${it.license}" },
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    } else Text(if (english) "Text guide · Illustration pending" else "Guía de texto · Ilustración pendiente",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     GuideSection(if (english) "Common mistakes" else "Errores habituales", text.mistakes)
                     GuideSection(if (english) "Muscles involved" else "Músculos implicados", text.muscles)
                     HorizontalDivider()
+                    TextButton(onClick = { showReferences = !showReferences }) {
+                        Text(if (english) "${if (showReferences) "Hide" else "View"} sources and credits" else "${if (showReferences) "Ocultar" else "Ver"} fuentes y créditos")
+                    }
+                    if (showReferences) {
                     SectionHeading(if (english) "Evidence and sources" else "Evidencia y fuentes")
                     Text(if (english) "ACSM 2026 reviews resistance-training prescription in healthy adults. It does not validate each technique cue or these illustrations. Technique cues are practical guidance, not a personal prescription."
                         else "ACSM 2026 revisa la prescripción del entrenamiento de fuerza en adultos sanos. No valida cada indicación técnica ni estas ilustraciones. La técnica descrita es orientación práctica, no una prescripción personal.", style = MaterialTheme.typography.bodySmall)
@@ -85,8 +102,9 @@ fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, title: String = "
                                 TextButton(onClick = { openLink(art.licenseUrl) }) { Text(if (english) "License" else "Licencia") }
                             }
                         }
-                        Text(if (english) "Adapted images retain CC BY-SA 3.0. No endorsement by the author or wger."
-                            else "Las imágenes adaptadas conservan CC BY-SA 3.0. Sin aval del autor ni de wger.", style = MaterialTheme.typography.labelSmall)
+                        Text(if (english) "Images retain the license stated for each file. No endorsement by the author or distributor."
+                            else "Las imágenes conservan la licencia indicada para cada archivo. Sin aval del autor ni del distribuidor.", style = MaterialTheme.typography.labelSmall)
+                    }
                     }
                 } else {
                     Text(if (current.isCustom) "Contenido personalizado · Sin guía editorial asociada" else "Ficha básica · Sin guía ampliada disponible", style = MaterialTheme.typography.labelMedium)

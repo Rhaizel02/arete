@@ -44,3 +44,11 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 - Los otros 35 ejercicios conservan ficha básica. [Matriz completa y fuentes](../block-7-catalog.md). Los personalizados nunca se reemplazan por contenido editorial.
 - Se reutiliza la hoja de guía dentro de sesión, sin ocupar espacio permanente de registro. No hay vídeos, APIs de ejecución, descargas en la app ni nuevas entidades/contratos.
 - No se abordan los P2 anteriores ni funcionalidades avanzadas ajenas a este bloque.
+
+## Bloque 8 — Contenido completo del catálogo
+
+- Completadas las 35 guías restantes: **45/45 ES/EN** con preparación, ejecución, indicaciones, errores, músculos y fuente práctica identificada. Se conservan las diez anteriores.
+- **9/45 ilustrados, 18 posiciones**. Nuevos: sentadilla trasera, prensa (ejemplo inclinado), rumano, curl femoral tumbado/sentado y martillo. Créditos por archivo CC BY-SA 3.0 o 4.0, sin inferir una licencia común.
+- Prioritarios gráficos pendientes: dominadas (pose ambigua), jalón al pecho (candidato tras nuca), remo con barra (remo alto/inverso no equivalente) y militar de pie (no sustituir por sentado). Los otros pendientes están enumerados en la [matriz actual](../block-8-catalog.md).
+- Instrucciones prioritarias, imágenes y fuentes desplegables, «Guías locales» y filtros aislados por pantalla. Sin nuevos destinos ni infraestructura multimedia.
+- No hay permiso aclaratorio para publicar assets RepDB aquí; no incorporados. No se persigue una cifra artificial de ilustraciones. Sin cambios de Room, contratos, reglas fitness ni P2 previos.

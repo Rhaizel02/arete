@@ -25,6 +25,18 @@ fun artworkResource(name: String): Int? = when (name) {
     "incline_dumbbell_extended" -> R.drawable.incline_dumbbell_extended
     "lateral_raise_lowered" -> R.drawable.lateral_raise_lowered
     "lateral_raise_raised" -> R.drawable.lateral_raise_raised
+    "back_squat_standing" -> R.drawable.back_squat_standing
+    "back_squat_lowered" -> R.drawable.back_squat_lowered
+    "leg_press_extended" -> R.drawable.leg_press_extended
+    "leg_press_bent" -> R.drawable.leg_press_bent
+    "romanian_deadlift_standing" -> R.drawable.romanian_deadlift_standing
+    "romanian_deadlift_lowered" -> R.drawable.romanian_deadlift_lowered
+    "lying_leg_curl_extended" -> R.drawable.lying_leg_curl_extended
+    "lying_leg_curl_bent" -> R.drawable.lying_leg_curl_bent
+    "seated_leg_curl_bent" -> R.drawable.seated_leg_curl_bent
+    "seated_leg_curl_extended" -> R.drawable.seated_leg_curl_extended
+    "hammer_curl_lowered" -> R.drawable.hammer_curl_lowered
+    "hammer_curl_raised" -> R.drawable.hammer_curl_raised
     else -> null
 }
 
