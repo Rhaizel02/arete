@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-10-23",
+  "sources": [
+    {"id":"acsm-2026","title":"ACSM 2026 · Resistance Training Prescription (DOI 10.1249/MSS.0000000000003897)","url":"https://doi.org/10.1249/MSS.0000000000003897","kind":"general-evidence"},
+    {"id":"bench-cscca","title":"CSCCa · Barbell Bench","url":"https://www.cscca.org/content.aspx?club_id=408309&module_id=732259&page_id=22","kind":"practical-technique"},
+    {"id":"incline-nasm","title":"NASM · Two-Arm Incline Dumbbell Chest Press","url":"https://www.nasm.org/resource-center/exercise-library/two-arm-incline-dumbbell-chest-press","kind":"practical-technique"},
+    {"id":"pullup-nasm","title":"NASM · Pull-Up","url":"https://www.nasm.org/resource-center/exercise-library/pull-up","kind":"practical-technique"},
+    {"id":"pulldown-ace","title":"ACE / University of Wisconsin–La Crosse · Back Exercise Study, 2018 (protocolo del jalón)","url":"https://contentcdn.eacefitness.com/April2018/ACE_BackExerStudy.pdf","kind":"practical-technique"},
+    {"id":"row-ace","title":"ACE · Bent-over Row","url":"https://www.acefitness.org/resources/everyone/exercise-library/12/bent-over-row/","kind":"practical-technique"},
+    {"id":"squat-ace","title":"ACE · Back Squat","url":"https://www.acefitness.org/resources/everyone/exercise-library/11/back-squat/","kind":"practical-technique"},
+    {"id":"legpress-nasm","title":"NASM · Leg Press","url":"https://www.nasm.org/resource-center/exercise-library/leg-press","kind":"practical-technique"},
+    {"id":"rdl-ace","title":"ACE · The Romanian Deadlift, 2025","url":"https://www.acefitness.org/continuing-education/certified/may-2025/8865/the-ace-do-it-better-series-the-romanian-deadlift/","kind":"practical-technique"},
+    {"id":"press-catalyst","title":"Catalyst Athletics · Press","url":"https://www.catalystathletics.com/exercise/90/Press/","kind":"practical-technique"},
+    {"id":"raise-ace","title":"ACE · Lateral Raise","url":"https://www.acefitness.org/resources/everyone/exercise-library/26/lateral-raise/","kind":"practical-technique"}
+  ],
+  "exercises": [
+    {
+      "exerciseId":"arete-barbell-bench-press", "sourceIds":["bench-cscca","acsm-2026"],
+      "text": {
+        "es": {"setup":["Banco plano, pies firmes y cabeza, espalda alta y glúteos apoyados. Ajusta soportes y ayudas de seguridad."],"steps":["Con agarre cerrado por el pulgar, saca la barra y colócala sobre el pecho.","Baja de forma controlada y empuja hasta extender los brazos."],"cues":["Muñecas sobre antebrazos; conserva los apoyos."],"mistakes":["Rebotar la barra o levantar los glúteos.","Abrir los codos sin control."],"muscles":["Pectoral mayor","Tríceps","Deltoides anterior"]},
+        "en": {"setup":["Use a flat bench with firm feet; support your head, upper back and buttocks. Adjust hooks and safety assistance."],"steps":["Wrap your thumbs around the bar, unrack and position it over your chest.","Lower under control, then press to extend your arms."],"cues":["Keep wrists over forearms and maintain your supports."],"mistakes":["Bouncing the bar or lifting your buttocks.","Uncontrolled elbow flare."],"muscles":["Pectoralis major","Triceps","Anterior deltoid"]}
+      },
+      "illustrations": [
+        {"resource":"bench_press_lowered","alt":{"es":"Persona tumbada en banco plano con barra sobre el pecho y codos flexionados.","en":"Person lying on a flat bench with the bar near the chest and elbows bent."},"caption":{"es":"1 · Posición inferior","en":"1 · Lower position"},"sourceUrl":"https://wger.de/media/exercise-images/192/Bench-press-2.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Redimensionado a un máximo de 512 px y convertido a WebP sin pérdida; sin cambios de estilo."},
+        {"resource":"bench_press_extended","alt":{"es":"La misma persona en banco plano sostiene la barra arriba con brazos extendidos.","en":"The same person on the flat bench holds the bar above the chest with arms extended."},"caption":{"es":"2 · Posición superior","en":"2 · Upper position"},"sourceUrl":"https://wger.de/media/exercise-images/192/Bench-press-1.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Redimensionado a un máximo de 512 px y convertido a WebP sin pérdida; sin cambios de estilo."}
+      ]
+    },
+    {
+      "exerciseId":"arete-incline-dumbbell-press", "sourceIds":["incline-nasm","acsm-2026"],
+      "text": {
+        "es":{"setup":["Ajusta el banco inclinado y apoya pies y espalda. Coloca las mancuernas a los lados del pecho."],"steps":["Empuja ambas mancuernas hacia arriba con control.","Baja con los antebrazos bajo la carga hasta un recorrido cómodo."],"cues":["Mantén el tronco estable y las muñecas alineadas."],"mistakes":["Chocar las mancuernas arriba.","Arquear excesivamente la espalda para completar la repetición."],"muscles":["Pectoral mayor, porción clavicular","Deltoides anterior","Tríceps"]},
+        "en":{"setup":["Set an inclined bench and support your feet and back. Bring the dumbbells beside your chest."],"steps":["Press both dumbbells upward under control.","Lower through a comfortable range with forearms under the load."],"cues":["Keep your trunk steady and wrists aligned."],"mistakes":["Clashing the dumbbells at the top.","Excessively arching your back to finish the repetition."],"muscles":["Clavicular pectoralis major","Anterior deltoid","Triceps"]}
+      },
+      "illustrations":[
+        {"resource":"incline_dumbbell_lowered","alt":{"es":"Persona en banco inclinado con una mancuerna en cada mano a los lados del pecho.","en":"Person on an inclined bench holding a dumbbell in each hand beside the chest."},"caption":{"es":"1 · Posición inferior","en":"1 · Lower position"},"sourceUrl":"https://wger.de/media/exercise-images/16/Incline-press-1.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Conversión a WebP sin pérdida a tamaño original (298 × 450); sin cambios de estilo."},
+        {"resource":"incline_dumbbell_extended","alt":{"es":"La misma persona en banco inclinado sostiene las mancuernas arriba con brazos extendidos.","en":"The same person on the inclined bench holds the dumbbells up with arms extended."},"caption":{"es":"2 · Posición superior","en":"2 · Upper position"},"sourceUrl":"https://wger.de/media/exercise-images/16/Incline-press-2.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Conversión a WebP sin pérdida a tamaño original (298 × 450); sin cambios de estilo."}
+      ]
+    },
+    {
+      "exerciseId":"arete-pull-up", "sourceIds":["pullup-nasm","acsm-2026"],
+      "text":{
+        "es":{"setup":["Sujeta una barra fija con palmas hacia delante y un ancho cómodo, algo mayor que los hombros."],"steps":["Desde brazos extendidos, lleva los codos hacia abajo y eleva el cuerpo.","Desciende con control hasta la posición inicial."],"cues":["Mantén el tronco firme, sin buscar la barra con el cuello."],"mistakes":["Balancearse para ganar impulso.","Dejarse caer en el descenso."],"muscles":["Dorsal ancho","Bíceps","Romboides y trapecio"]},
+        "en":{"setup":["Hold a fixed bar with palms facing away and a comfortable grip slightly wider than your shoulders."],"steps":["From extended arms, drive elbows downward to raise your body.","Lower under control to the starting position."],"cues":["Keep your trunk steady rather than reaching with your neck."],"mistakes":["Swinging for momentum.","Dropping without control."],"muscles":["Latissimus dorsi","Biceps","Rhomboids and trapezius"]}
+      }
+    },
+    {
+      "exerciseId":"arete-lat-pulldown", "sourceIds":["pulldown-ace","acsm-2026"],
+      "text":{
+        "es":{"setup":["Ajusta el apoyo de muslos y agarra la barra con palmas hacia delante. Siéntate estable."],"steps":["Con ligera inclinación del torso, lleva la barra hacia la parte alta del pecho.","Extiende los brazos de nuevo sin soltar la carga de golpe."],"cues":["Dirige los codos hacia abajo y conserva la posición del torso."],"mistakes":["Tirar detrás de la nuca.","Balancear el cuerpo para mover más peso."],"muscles":["Dorsal ancho","Bíceps","Trapecio inferior"]},
+        "en":{"setup":["Adjust the thigh pad and hold the bar with palms facing forward. Sit firmly."],"steps":["With a slight torso lean, draw the bar toward your upper chest.","Extend your arms again without releasing the load suddenly."],"cues":["Drive elbows downward and keep your torso position."],"mistakes":["Pulling behind the neck.","Swinging your body to move more weight."],"muscles":["Latissimus dorsi","Biceps","Lower trapezius"]}
+      }
+    },
+    {
+      "exerciseId":"arete-barbell-row", "sourceIds":["row-ace","acsm-2026"],
+      "text":{
+        "es":{"setup":["Sujeta la barra con palmas hacia abajo. Flexiona cadera y ligeramente rodillas, con el tronco firme."],"steps":["Tira de la barra hacia el abdomen sin cambiar la inclinación del torso.","Desciende con control hasta extender los brazos."],"cues":["Mantén la barra próxima y el cuello alineado con el tronco."],"mistakes":["Redondear la espalda bajo la carga.","Levantarse o dar tirones en cada repetición."],"muscles":["Dorsal ancho","Romboides","Bíceps","Erectores espinales, estabilización"]},
+        "en":{"setup":["Hold the bar palms down. Hinge at the hips with slightly bent knees and a braced trunk."],"steps":["Row the bar toward your abdomen without changing your torso angle.","Lower under control until your arms extend."],"cues":["Keep the bar close and neck aligned with your trunk."],"mistakes":["Rounding your back under load.","Standing up or jerking each repetition."],"muscles":["Latissimus dorsi","Rhomboids","Biceps","Spinal erectors, stabilization"]}
+      }
+    },
+    {
+      "exerciseId":"arete-back-squat", "sourceIds":["squat-ace","acsm-2026"],
+      "text":{
+        "es":{"setup":["Ajusta soportes y seguros del rack. Apoya la barra sobre la espalda alta, no sobre el cuello."],"steps":["Saca la barra, fija los pies y flexiona cadera y rodillas con control.","Empuja el suelo para volver a estar de pie manteniendo el tronco firme."],"cues":["Rodillas en la dirección de los pies; usa un recorrido que puedas controlar."],"mistakes":["Perder el apoyo del pie.","Colapsar el tronco al subir."],"muscles":["Cuádriceps","Glúteos","Aductores","Tronco, estabilización"]},
+        "en":{"setup":["Adjust rack hooks and safeties. Rest the bar on your upper back, not your neck."],"steps":["Unrack, set your feet and bend hips and knees under control.","Push through the floor to stand with a steady trunk."],"cues":["Let knees follow your toes; use a range you can control."],"mistakes":["Losing foot contact.","Collapsing your trunk on the ascent."],"muscles":["Quadriceps","Glutes","Adductors","Trunk stabilizers"]}
+      }
+    },
+    {
+      "exerciseId":"arete-leg-press", "sourceIds":["legpress-nasm","acsm-2026"],
+      "text":{
+        "es":{"setup":["Ajusta asiento y seguros según la máquina. Apoya espalda y pelvis, y coloca los pies en la plataforma."],"steps":["Desbloquea los seguros y flexiona las piernas sin despegar la pelvis.","Empuja de forma uniforme para extenderlas con control; vuelve a asegurar al terminar."],"cues":["Usa la profundidad que permita conservar los apoyos."],"mistakes":["Bajar hasta redondear la espalda.","Bloquear las rodillas con un golpe."],"muscles":["Cuádriceps","Glúteos","Aductores"]},
+        "en":{"setup":["Adjust the seat and safeties for your machine. Support back and pelvis; place feet on the platform."],"steps":["Release the safeties and bend your legs without lifting your pelvis.","Press evenly to extend under control; secure the machine when finished."],"cues":["Use a depth that preserves your supports."],"mistakes":["Descending until your back rounds.","Snapping your knees into lockout."],"muscles":["Quadriceps","Glutes","Adductors"]}
+      }
+    },
+    {
+      "exerciseId":"arete-romanian-deadlift", "sourceIds":["rdl-ace","acsm-2026"],
+      "text":{
+        "es":{"setup":["De pie, sujeta la barra frente a los muslos con rodillas ligeramente flexionadas."],"steps":["Lleva la cadera atrás y desliza la barra cerca de las piernas.","Detén el descenso cuando no puedas mantener el tronco estable; extiende la cadera para volver."],"cues":["No es necesario alcanzar el suelo; conserva la flexión suave de rodilla."],"mistakes":["Alejar la barra del cuerpo.","Convertir el movimiento en una sentadilla o redondear la espalda."],"muscles":["Isquiotibiales","Glúteos","Erectores espinales, estabilización"]},
+        "en":{"setup":["Stand holding the bar in front of your thighs with slightly bent knees."],"steps":["Push hips backward, keeping the bar close to your legs.","Stop lowering when you cannot keep your trunk steady; extend your hips to return."],"cues":["Reaching the floor is unnecessary; maintain a soft knee bend."],"mistakes":["Letting the bar drift away.","Turning the hinge into a squat or rounding your back."],"muscles":["Hamstrings","Glutes","Spinal erectors, stabilization"]}
+      }
+    },
+    {
+      "exerciseId":"arete-overhead-press", "sourceIds":["press-catalyst","acsm-2026"],
+      "text":{
+        "es":{"setup":["De pie, coloca la barra delante de los hombros con agarre completo. Mantén abdomen firme."],"steps":["Aparta ligeramente la cabeza y empuja la barra por encima de ella.","Termina estable con brazos extendidos; baja de nuevo a los hombros con control."],"cues":["Barra cerca del cuerpo y tronco firme, sin impulso de piernas."],"mistakes":["Inclinarse demasiado hacia atrás.","Lanzar la barra hacia delante."],"muscles":["Deltoides","Tríceps","Tronco, estabilización"]},
+        "en":{"setup":["Stand with the bar in front of your shoulders, using a full grip and a braced abdomen."],"steps":["Move your head slightly out of the way and press the bar overhead.","Finish balanced with arms extended, then lower to your shoulders under control."],"cues":["Keep the bar close and trunk steady, without leg drive."],"mistakes":["Leaning excessively backward.","Pushing the bar out in front."],"muscles":["Deltoids","Triceps","Trunk stabilizers"]}
+      }
+    },
+    {
+      "exerciseId":"arete-lateral-raise", "sourceIds":["raise-ace","acsm-2026"],
+      "text":{
+        "es":{"setup":["De pie, sujeta mancuernas a los lados con codos ligeramente flexionados y tronco estable."],"steps":["Eleva los brazos hacia los lados hasta aproximadamente la altura del hombro.","Baja lentamente a la posición inicial."],"cues":["Conserva una flexión suave de codos y muñecas alineadas."],"mistakes":["Balancear el cuerpo para lanzar las mancuernas.","Arquear la espalda o perder el control del descenso."],"muscles":["Deltoides, énfasis lateral","Trapecio y serrato, movimiento escapular"]},
+        "en":{"setup":["Stand with dumbbells beside you, elbows slightly bent and trunk steady."],"steps":["Raise arms out to the sides to roughly shoulder height.","Lower slowly to the starting position."],"cues":["Keep a soft elbow bend and aligned wrists."],"mistakes":["Swinging your body to throw the dumbbells upward.","Arching your back or losing control on the way down."],"muscles":["Deltoids, lateral emphasis","Trapezius and serratus, scapular movement"]}
+      },
+      "illustrations":[
+        {"resource":"lateral_raise_lowered","alt":{"es":"Persona de pie sujetando mancuernas a los lados con brazos bajos.","en":"Standing person holding dumbbells at their sides with arms lowered."},"caption":{"es":"1 · Posición inicial","en":"1 · Starting position"},"sourceUrl":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Redimensionado a un máximo de 512 px y convertido a WebP sin pérdida; sin cambios de estilo."},
+        {"resource":"lateral_raise_raised","alt":{"es":"La misma persona eleva las mancuernas lateralmente hasta la altura de los hombros.","en":"The same person raises the dumbbells out to the sides to shoulder level."},"caption":{"es":"2 · Posición elevada","en":"2 · Raised position"},"sourceUrl":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-1.png","author":"Everkinetic · vía wger","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/","changes":"Redimensionado a un máximo de 512 px y convertido a WebP sin pérdida; sin cambios de estilo."}
+      ]
+    }
+  ]
+}

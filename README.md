@@ -90,3 +90,7 @@ Referencias, seis capturas reales, excepciones autorizadas y resultados de valid
 La identidad del Bloque A se extiende a rutinas, workouts, prescripciones, catálogo y fichas, ejercicios personalizados, historial, actividad, planificación, ajustes, detalle de progreso y peso corporal. Listas compactas con separadores, campos tonales y acciones inferiores compartidas mantienen los flujos originales. Home reduce su encabezado decorativo y la última ejecución de sesión muestra kg y reps explícitos por serie.
 
 Validación funcional, compatibilidad y capturas reales: [Bloque B](docs/design/validation-block-b/README.md).
+
+## Catálogo 2.0 — Bloque 7
+
+Búsqueda ES/EN combinada con filtros locales de músculo y equipamiento, diez guías técnicas bilingües y tres ejercicios ilustrados offline (seis posiciones). Las ilustraciones son de **Everkinetic**, distribuidas por **wger**, bajo **[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)**; se redimensionaron/convertieron a WebP sin cambios de estilo y conservan esa licencia. [Créditos y originales](docs/licenses/exercise-art.md), [formato editorial y cobertura de los 45 ejercicios](docs/block-7-catalog.md), [validación real](docs/design/validation-block-7/README.md).

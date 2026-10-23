@@ -37,6 +37,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
+import com.arete.app.catalog.EditorialManifest
+import com.arete.app.catalog.filterExercises
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -82,10 +88,21 @@ class AreteViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.arete.app.data.PlanningState())
 
     val exerciseQuery = MutableStateFlow("")
-    val exercises = exerciseQuery.flatMapLatest(repository::searchExercises)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val exerciseMuscle = MutableStateFlow<String?>(null)
+    val exerciseEquipment = MutableStateFlow<String?>(null)
     val allExercises = repository.searchExercises("")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val exercises = combine(allExercises, exerciseQuery, exerciseMuscle, exerciseEquipment, ::filterExercises)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val exerciseEditorial = flow {
+        emit(runCatching { app.assets.open("exercise_editorial.json").bufferedReader().use { EditorialManifest.decode(it.readText()) } }.getOrNull())
+    }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    fun clearExerciseFilters() {
+        exerciseQuery.value = ""
+        exerciseMuscle.value = null
+        exerciseEquipment.value = null
+    }
 
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val messages = _messages.asSharedFlow()

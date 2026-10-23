@@ -1,14 +1,10 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.arete.app.ui
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -296,32 +292,4 @@ private fun RestTimerBanner(endAt: Long, vibration: Boolean, onAdjust: (Int) -> 
 private fun NotesDialog(title: String, initial: String, onDismiss: () -> Unit, onChange: (String) -> Unit) {
     var value by remember { mutableStateOf(initial) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { OutlinedTextField(value, { value = it; onChange(it) }, modifier = Modifier.fillMaxWidth(), label = { Text("Notas · guardado automático") }, minLines = 3) }, confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } })
-}
-
-@Composable
-fun ExerciseGuideSheet(id: String?, viewModel: AreteViewModel, title: String = "Guía técnica", onEdit: ((String) -> Unit)? = null, onDismiss: () -> Unit) {
-    val exercise by produceState<ExerciseEntity?>(null, id) { value = id?.let { viewModel.getExerciseGuide(it) } }
-    val context = LocalContext.current
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineSmall)
-            exercise?.let { Text(it.nameEs, style = MaterialTheme.typography.titleMedium) }
-            exercise?.let {
-                Text("${it.primaryMuscle} · ${it.equipment}", color = MaterialTheme.colorScheme.primary)
-                if (it.nameEn.isNotBlank()) Text(it.nameEn, style = MaterialTheme.typography.bodySmall)
-                if (it.secondaryMuscles.isNotEmpty()) Text("Secundarios: ${it.secondaryMuscles.joinToString()}", style = MaterialTheme.typography.bodySmall)
-            }
-            SectionHeading("Instrucciones")
-            Text(exercise?.instructions?.takeIf { it.isNotBlank() } ?: "No hay instrucciones guardadas para este ejercicio.")
-            exercise?.externalUrl?.let { url ->
-                if (Uri.parse(url).scheme?.lowercase() in listOf("https", "http")) SecondaryAction(onClick = {
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.onFailure { viewModel.showMessage("No se pudo abrir el enlace") }
-                }) { Text("Abrir guía externa") }
-            }
-            exercise?.takeIf { it.isCustom }?.let { custom ->
-                if (onEdit != null) PrimaryAction(onClick = { onEdit(custom.id) }) { Text("Editar ejercicio") }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
 }

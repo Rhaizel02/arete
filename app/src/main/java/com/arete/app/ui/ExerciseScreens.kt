@@ -2,7 +2,6 @@
 
 package com.arete.app.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,24 +19,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arete.app.data.ExerciseDraft
 import com.arete.app.data.local.ExerciseEntity
+import com.arete.app.catalog.ExerciseIllustration
+import com.arete.app.catalog.catalogFilterOptions
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 
 @Composable
 fun CatalogScreen(
@@ -99,6 +103,15 @@ private fun ExerciseCatalogScaffold(
 ) {
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val query by viewModel.exerciseQuery.collectAsStateWithLifecycle()
+    val muscle by viewModel.exerciseMuscle.collectAsStateWithLifecycle()
+    val equipment by viewModel.exerciseEquipment.collectAsStateWithLifecycle()
+    val allExercises by viewModel.allExercises.collectAsStateWithLifecycle()
+    val editorial by viewModel.exerciseEditorial.collectAsStateWithLifecycle()
+    val muscles = remember(allExercises) { catalogFilterOptions(allExercises.map { it.primaryMuscle }) }
+    val equipmentOptions = remember(allExercises) { catalogFilterOptions(allExercises.map { it.equipment }) }
+    val filtered = query.isNotEmpty() || muscle != null || equipment != null
+    val listState = rememberLazyListState()
+    LaunchedEffect(query, muscle, equipment) { listState.scrollToItem(0) }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -118,20 +131,39 @@ private fun ExerciseCatalogScaffold(
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 singleLine = true
             )
-            if (exercises.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    EmptyState("Sin resultados", "Prueba otra búsqueda o crea un ejercicio personalizado.")
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                state = listState,
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                item(key = "catalog-filters") {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CatalogFilterMenu("Músculo", muscle, muscles, { viewModel.exerciseMuscle.value = it }, Modifier.weight(1f))
+                        CatalogFilterMenu("Equipo", equipment, equipmentOptions, { viewModel.exerciseEquipment.value = it }, Modifier.weight(1f))
+                    }
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp)
-                ) {
-                    items(exercises, key = { it.id }) { exercise ->
+                item(key = "catalog-result-count") {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("${exercises.size} ${if (exercises.size == 1) "ejercicio" else "ejercicios"}", Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (filtered) TextButton(onClick = viewModel::clearExerciseFilters) { Text("Limpiar filtros") }
+                        else Text("Sin conexión", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                if (exercises.isEmpty()) item(key = "catalog-empty") {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        EmptyState("Sin resultados", "Prueba otra búsqueda o crea un ejercicio personalizado.")
+                        if (filtered) SecondaryAction(onClick = viewModel::clearExerciseFilters) { Text("Mostrar todos") }
+                    }
+                } else {
+                    items(exercises, key = { "exercise:${it.id}" }) { exercise ->
                         ExerciseRow(
                             exercise = exercise,
                             selectionMode = selectionMode,
+                            art = editorial?.forExercise(exercise)?.illustrations?.firstOrNull(),
                             onClick = { if (selectionMode) onExercise(exercise.id) else selectedId = exercise.id },
+                            onPreview = { selectedId = exercise.id },
                             onEdit = { onEditCustom(exercise.id) }
                         )
                     }
@@ -143,13 +175,34 @@ private fun ExerciseCatalogScaffold(
 }
 
 @Composable
+private fun CatalogFilterMenu(label: String, selected: String?, options: List<String>, onSelect: (String?) -> Unit, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier) {
+        SecondaryAction(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(selected ?: label, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Icon(Icons.Default.ExpandMore, "Filtrar por $label")
+        }
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Todos · $label") }, onClick = { onSelect(null); expanded = false })
+            options.forEach { option ->
+                DropdownMenuItem(text = { Text(option) }, onClick = { onSelect(option); expanded = false })
+            }
+        }
+    }
+}
+
+@Composable
 private fun ExerciseRow(
     exercise: ExerciseEntity,
     selectionMode: Boolean,
+    art: ExerciseIllustration?,
     onClick: () -> Unit,
+    onPreview: () -> Unit,
     onEdit: () -> Unit
 ) {
     EditorialRow(onClick = onClick) {
+            ExerciseThumbnail(art)
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(exercise.nameEs, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 if (exercise.nameEn.isNotBlank()) Text(
@@ -164,7 +217,8 @@ private fun ExerciseRow(
                 )
             }
             if (selectionMode) {
-                Icon(Icons.Default.Add, "Añadir")
+                IconButton(onClick = onPreview) { Icon(Icons.Default.Info, "Ver ficha de ${exercise.nameEs}") }
+                Icon(Icons.Default.Add, "Añadir ejercicio")
             } else if (exercise.isCustom) {
                 IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Editar ejercicio") }
             } else Icon(Icons.Default.ChevronRight, "Ver ficha")

@@ -27,7 +27,7 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 
 - Se incorporan los filtros básicos de 1/3/6 meses y Todo, selección de puntos de gráficas, comparaciones históricas y señales provisionales de mejora autorizadas por este bloque.
 - Icono definitivo del paquete aprobado, sin generar otra identidad.
-- Siguen fuera de alcance zoom, gestos avanzados, backup automático, catálogo multimedia nuevo, Health Connect, integraciones y coaching adaptativo.
+- Quedaron fuera de ese bloque zoom, gestos avanzados, backup automático, catálogo multimedia nuevo, Health Connect, integraciones y coaching adaptativo. Backup y catálogo se tratan posteriormente en los bloques 6 y 7.
 - P2 previos conservados: notificación del temporizador si Android termina el proceso y matching avanzado de precarga ante cambios fuertes de estructura de series.
 
 ## Bloque 6 — Backup automático
@@ -35,3 +35,12 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 - Se incorpora el bloque independiente de copias externas SAF, programación diaria opcional, retención verificada y recuperación v1 tras limpiar/reinstalar.
 - Se mantienen fuera de alcance sincronización bidireccional, conflictos entre dispositivos, proveedores cloud integrados y cifrado personalizado.
 - Los P2 anteriores no se modifican. La persistencia remota y disponibilidad de un proveedor SAF no pueden garantizarse por Arete.
+
+## Bloque 7 — Catálogo 2.0
+
+- Búsqueda ES/EN con filtros combinados por músculo/equipo, incluidos los personalizados, y limpieza explícita.
+- Diez guías editoriales ES/EN: banca con barra, inclinado con mancuernas, dominadas, jalón, remo con barra, sentadilla trasera, prensa, rumano, militar de pie y elevaciones laterales.
+- Tres ilustrados offline: banca, inclinado y elevaciones; seis posiciones Everkinetic/wger CC BY-SA 3.0. Los otros siete siguen pendientes de multimedia con procedencia/licencia y variante verificadas. RepDB no se incorpora sin aclaración para assets en código fuente público.
+- Los otros 35 ejercicios conservan ficha básica. [Matriz completa y fuentes](../block-7-catalog.md). Los personalizados nunca se reemplazan por contenido editorial.
+- Se reutiliza la hoja de guía dentro de sesión, sin ocupar espacio permanente de registro. No hay vídeos, APIs de ejecución, descargas en la app ni nuevas entidades/contratos.
+- No se abordan los P2 anteriores ni funcionalidades avanzadas ajenas a este bloque.
