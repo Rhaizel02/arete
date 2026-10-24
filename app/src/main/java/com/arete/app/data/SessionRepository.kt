@@ -82,7 +82,13 @@ class SessionRepository(
         dao.observeSession(id),
         dao.observeLastPerformance(id)
     ) { session, last ->
-        SessionViewData(session, last.groupBy { it.exerciseId })
+        val occurrences = mutableMapOf<String, Int>()
+        SessionViewData(session, session?.orderedExercises().orEmpty().associate { item ->
+            val id = item.exercise.exerciseId.orEmpty()
+            val ordinal = occurrences[id] ?: 0
+            occurrences[id] = ordinal + 1
+            item.exercise.id to historicalOccurrence(last, id, item.exercise.sourceRoutineExerciseId, ordinal)
+        })
     }
 
     suspend fun startPlannedWorkout(workoutId: String): String = database.withTransaction {
@@ -132,8 +138,11 @@ class SessionRepository(
             )
         ))
         val previous = dao.getLastPerformance(listOf(catalogExercise.id), session.session.startedAt)
+        val history = historicalOccurrence(previous, catalogExercise.id, null,
+            session.exercises.count { it.exercise.exerciseId == catalogExercise.id })
+        val prefill = prefillSets(List(3) { false }, history)
         dao.insertSets((0 until 3).map { index ->
-            val last = previous.firstOrNull { it.position == index }
+            val last = prefill[index]
             SessionSetEntity(
                 id = newId(),
                 sessionExerciseId = id,
@@ -164,8 +173,12 @@ class SessionRepository(
             )
         )
         val previous = dao.getLastPerformance(listOf(replacement.id), session.session.startedAt)
-        dao.getSets(sessionExercise.id).forEach { set ->
-            val last = previous.firstOrNull { it.position == set.position }
+        val sets = dao.getSets(sessionExercise.id)
+        val ordinal = session.orderedExercises().count { it.exercise.position < sessionExercise.position && it.exercise.exerciseId == replacement.id }
+        val history = historicalOccurrence(previous, replacement.id, null, ordinal)
+        val prefill = prefillSets(sets.map { it.isWarmupSnapshot }, history)
+        sets.forEachIndexed { index, set ->
+            val last = prefill[index]
             dao.updateSet(set.copy(weightKg = last?.weightKg, reps = last?.reps))
         }
     }
@@ -357,10 +370,14 @@ class SessionRepository(
             ) to item
         }
         dao.insertExercises(sessionExercises.map { it.first })
+        val occurrences = mutableMapOf<String, Int>()
         dao.insertSets(sessionExercises.flatMap { (sessionExercise, template) ->
+            val ordinal = occurrences[template.exercise.id] ?: 0
+            occurrences[template.exercise.id] = ordinal + 1
+            val history = historicalOccurrence(previous, template.exercise.id, template.item.id, ordinal)
+            val prefill = prefillSets(template.orderedSets().map { it.type == SetType.WARMUP }, history)
             template.orderedSets().mapIndexed { index, set ->
-                val last = previous.filter { it.exerciseId == template.exercise.id }
-                    .firstOrNull { it.position == index }
+                val last = prefill[index]
                 SessionSetEntity(
                     id = newId(),
                     sessionExerciseId = sessionExercise.id,

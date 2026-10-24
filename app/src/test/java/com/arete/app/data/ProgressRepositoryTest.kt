@@ -57,6 +57,8 @@ class ProgressRepositoryTest {
         var dashboard = progress.dashboard(flowOf(3)).first()
         assertEquals(1, dashboard.stats.totalWorkouts)
         assertEquals(1, dashboard.stats.effectiveWorkSets)
+        assertEquals(1000.0, dashboard.externalVolume.totals.externalKgReps!!, 0.0)
+        assertEquals(10L, dashboard.externalVolume.totals.completedReps)
         assertEquals(60, dashboard.stats.averageDurationMinutes)
         assertEquals(1, dashboard.stats.muscleDistribution.single().sets)
         assertEquals(1, dashboard.stats.monthlyActivity.single().workouts)
@@ -68,11 +70,13 @@ class ProgressRepositoryTest {
         dashboard = progress.dashboard(flowOf(3)).first()
         assertEquals(80.0, dashboard.exercises.single().maxWeightKg!!, 0.0)
         assertEquals(80.0, dashboard.latestRecord!!.weightKg, 0.0)
+        assertEquals(640.0, dashboard.externalVolume.totals.externalKgReps!!, 0.0)
 
         sessions.deleteSession(database.sessionDao().getSession(sessionId)!!.session)
         dashboard = progress.dashboard(flowOf(3)).first()
         assertEquals(0, dashboard.stats.totalWorkouts)
         assertTrue(dashboard.exercises.isEmpty())
+        assertNull(dashboard.externalVolume.totals.externalKgReps)
         assertNull(dashboard.latestRecord)
     }
 

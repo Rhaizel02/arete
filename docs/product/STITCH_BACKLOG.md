@@ -52,3 +52,10 @@ Excepción aprobada durante la implementación: añadir reordenación de series.
 - Prioritarios gráficos pendientes: dominadas (pose ambigua), jalón al pecho (candidato tras nuca), remo con barra (remo alto/inverso no equivalente) y militar de pie (no sustituir por sentado). Los otros pendientes están enumerados en la [matriz actual](../block-8-catalog.md).
 - Instrucciones prioritarias, imágenes y fuentes desplegables, «Guías locales» y filtros aislados por pantalla. Sin nuevos destinos ni infraestructura multimedia.
 - No hay permiso aclaratorio para publicar assets RepDB aquí; no incorporados. No se persigue una cifra artificial de ilustraciones. Sin cambios de Room, contratos, reglas fitness ni P2 previos.
+
+## Macrobloque 9–10 — Entrenamiento y progreso
+
+- Se abordan los P2 de matching estructural de precarga y aviso tras terminación normal del proceso, dentro de los permisos y límites Android documentados.
+- Borradores restaurables y guardado explícito con comprobación concurrente, ergonomía incremental, estimación derivada de duración y volumen externo registrado.
+- Room v2 y JSON v1 sin cambios. El contenido gráfico del Bloque 8 no se amplía.
+- Los pendientes actuales se revisan en [BACKLOG.md](BACKLOG.md), separado de este histórico de alcance.

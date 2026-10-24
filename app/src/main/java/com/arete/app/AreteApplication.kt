@@ -33,6 +33,8 @@ class AreteApplication : Application() {
     val planningRepository: PlanningRepository by lazy { PlanningRepository(database, preferences) }
     val backupService: BackupService by lazy { BackupService(database, preferences) }
     val reminderScheduler: WorkoutReminderScheduler by lazy { WorkoutReminderScheduler(this) }
+    val restAlarmScheduler by lazy { com.arete.app.reminders.RestAlarmScheduler(this) }
+    val restTimers by lazy { com.arete.app.reminders.RestTimerCoordinator(database, preferences, restAlarmScheduler) }
     val automaticBackupPreferences by lazy { AutomaticBackupPreferences(this) }
     val backupWorkScheduler by lazy { BackupWorkScheduler(this) }
     val automaticBackups by lazy { AutomaticBackupCoordinator(backupService, automaticBackupPreferences, SafBackupDestination(this), backupWorkScheduler) }
@@ -52,5 +54,10 @@ class AreteApplication : Application() {
 
     suspend fun scheduleCurrentReminder() {
         reminderScheduler.schedule(preferences.settings.first())
+    }
+
+    fun onForeground(visible: Boolean) {
+        restTimers.appVisible = visible
+        if (visible) applicationScope.launch { restTimers.reconcile(dropExpired = true) }
     }
 }

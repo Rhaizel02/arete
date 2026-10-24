@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -28,7 +30,8 @@ data class AppSettings(
     val remindersEnabled: Boolean = false,
     val reminderHour: Int = 18,
     val reminderMinute: Int = 0,
-    val weeklyPlan: List<WeeklyPlanEntry> = emptyList()
+    val weeklyPlan: List<WeeklyPlanEntry> = emptyList(),
+    val restAlertsEnabled: Boolean = false
 )
 
 @Serializable
@@ -43,10 +46,12 @@ data class BackupPreferences(
     val weeklyPlan: List<WeeklyPlanEntry> = emptyList()
 )
 
-class PreferencesRepository(private val context: Context) {
+class PreferencesRepository(context: Context, private val store: DataStore<Preferences> = context.dataStore) {
     private val json = Json { ignoreUnknownKeys = true }
     private val themeKey = stringPreferencesKey("theme_mode")
     private val restTimerKey = booleanPreferencesKey("rest_timer_enabled")
+    // Local opt-in only; deliberately absent from BackupPreferences / JSON v1.
+    private val restAlertsKey = booleanPreferencesKey("rest_alerts_enabled")
     private val vibrationKey = booleanPreferencesKey("vibration_enabled")
     private val weeklyGoalKey = intPreferencesKey("weekly_training_goal")
     private val remindersKey = booleanPreferencesKey("reminders_enabled")
@@ -54,10 +59,11 @@ class PreferencesRepository(private val context: Context) {
     private val reminderMinuteKey = intPreferencesKey("reminder_minute")
     private val weeklyPlanKey = stringPreferencesKey("weekly_plan_v1")
 
-    val settings: Flow<AppSettings> = context.dataStore.data.map { preferences ->
+    val settings: Flow<AppSettings> = store.data.map { preferences ->
         AppSettings(
             themeMode = preferences[themeKey]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
             restTimerEnabled = preferences[restTimerKey] ?: true,
+            restAlertsEnabled = preferences[restAlertsKey] ?: false,
             vibrationEnabled = preferences[vibrationKey] ?: true,
             weeklyGoal = (preferences[weeklyGoalKey] ?: 3).coerceIn(1, 14),
             remindersEnabled = preferences[remindersKey] ?: false,
@@ -78,6 +84,7 @@ class PreferencesRepository(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) = update { it[themeKey] = mode.name }
     suspend fun setRestTimerEnabled(enabled: Boolean) = update { it[restTimerKey] = enabled }
+    suspend fun setRestAlertsEnabled(enabled: Boolean) = update { it[restAlertsKey] = enabled }
     suspend fun setVibrationEnabled(enabled: Boolean) = update { it[vibrationKey] = enabled }
     suspend fun setWeeklyGoal(goal: Int) = update { it[weeklyGoalKey] = goal.coerceIn(1, 14) }
     suspend fun setRemindersEnabled(enabled: Boolean) = update { it[remindersKey] = enabled }
@@ -89,7 +96,7 @@ class PreferencesRepository(private val context: Context) {
 
     suspend fun setPlannedWorkout(dayOfWeek: Int, workoutId: String?) {
         require(dayOfWeek in 1..7) { "Día de semana no válido" }
-        context.dataStore.edit { preferences ->
+        store.edit { preferences ->
             val plan = decodePlan(preferences[weeklyPlanKey]).associateBy { it.dayOfWeek }.toMutableMap()
             if (workoutId.isNullOrBlank()) plan.remove(dayOfWeek)
             else plan[dayOfWeek] = WeeklyPlanEntry(dayOfWeek, workoutId)
@@ -100,7 +107,7 @@ class PreferencesRepository(private val context: Context) {
     suspend fun backupSnapshot(): BackupPreferences = settings.first().toBackup()
 
     suspend fun restore(snapshot: BackupPreferences) {
-        context.dataStore.edit { preferences ->
+        store.edit { preferences ->
             preferences[themeKey] = snapshot.themeMode
             preferences[restTimerKey] = snapshot.restTimerEnabled
             preferences[vibrationKey] = snapshot.vibrationEnabled
@@ -113,7 +120,7 @@ class PreferencesRepository(private val context: Context) {
     }
 
     private suspend fun update(block: (MutablePreferences) -> Unit) {
-        context.dataStore.edit(block)
+        store.edit(block)
     }
 
     private fun decodePlan(raw: String?): List<WeeklyPlanEntry> = raw?.let {

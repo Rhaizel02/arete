@@ -106,6 +106,15 @@ fun WorkoutEditorScreen(routineId: String, workoutId: String, viewModel: AreteVi
         bottomBar = { AddAction("Añadir ejercicio", onAddExercise) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp)) {
             item { Text("${exercises.size} ${if (exercises.size == 1) "ejercicio" else "ejercicios"} · $setCount ${if (setCount == 1) "serie" else "series"} de plantilla", Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item {
+                val estimate = workout?.let { com.arete.app.data.estimateWorkoutDuration(it) }
+                if (estimate != null) {
+                    Text(estimate.label, style = MaterialTheme.typography.titleMedium)
+                    Text("Orientativa · incluye calentamientos, descansos y preparación." +
+                        (if (estimate.grouped) " Grupos: menor fiabilidad; no se descuentan descansos." else ""),
+                        Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             if (exercises.isEmpty()) item { EmptyState("Sin ejercicios", "Busca en el catálogo o crea uno personalizado.", "Añadir ejercicio", onAddExercise) }
             itemsIndexed(exercises, key = { _, item -> item.item.id }) { index, details ->
                 EditorialRow(onClick = { onConfigure(details.item.id) }) {

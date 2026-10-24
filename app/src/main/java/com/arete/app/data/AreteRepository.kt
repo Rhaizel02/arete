@@ -114,8 +114,15 @@ class AreteRepository(
         incrementKg: Double?,
         notes: String,
         groupId: String?,
-        sets: List<SetDraft>
+        sets: List<SetDraft>,
+        expectedSets: List<PrescriptionSetEntity>? = null
     ) = database.withTransaction {
+        require(restSeconds in 0..3600 && (incrementKg == null || (incrementKg.isFinite() && incrementKg >= 0))) { "Descanso o incremento no válido" }
+        require(sets.isNotEmpty() && sets.all { it.repsMin > 0 && it.repsMax >= it.repsMin }) { "Repeticiones no válidas" }
+        if (expectedSets != null) {
+            val current = database.routineDao().getWorkout(item.workoutId)?.exercises?.firstOrNull { it.item.id == item.id }
+            check(current != null && current.item == item && current.orderedSets() == expectedSets) { "La plantilla cambió. Reabre el editor para revisar los cambios; no se ha sobrescrito." }
+        }
         database.routineDao().updateRoutineExercise(
             item.copy(
                 restSeconds = restSeconds,

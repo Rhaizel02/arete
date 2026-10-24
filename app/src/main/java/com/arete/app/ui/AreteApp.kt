@@ -73,7 +73,7 @@ sealed interface AppScreen : java.io.Serializable {
 }
 
 @Composable
-fun AreteApp(viewModel: AreteViewModel) {
+fun AreteApp(viewModel: AreteViewModel, openSessionRequest: Int = 0) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -82,7 +82,7 @@ fun AreteApp(viewModel: AreteViewModel) {
         restore = { it.toMutableStateList() }
     )) { mutableStateListOf<AppScreen>(AppScreen.Home) }
 
-    fun push(screen: AppScreen) { stack += screen }
+    fun push(screen: AppScreen) { if (stack.lastOrNull() != screen) stack += screen }
     fun back() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
     fun replaceWith(screen: AppScreen) {
         if (stack.isNotEmpty()) stack.removeAt(stack.lastIndex)
@@ -91,6 +91,11 @@ fun AreteApp(viewModel: AreteViewModel) {
     fun selectRoot(screen: AppScreen) {
         stack.clear()
         stack += screen
+    }
+    LaunchedEffect(openSessionRequest) {
+        if (openSessionRequest > 0) viewModel.activeSessionId()?.let { id ->
+            if (stack.lastOrNull() != AppScreen.Session(id)) { selectRoot(AppScreen.Home); push(AppScreen.Session(id)) }
+        }
     }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->

@@ -57,7 +57,8 @@ data class ProgressDashboard(
     val suggestions: List<ProgressionSuggestion> = emptyList(),
     val bodyWeights: List<BodyWeightEntryEntity> = emptyList(),
     val bodyWeightTrend: BodyWeightTrend = BodyWeightTrend(null, null, null),
-    val confirmedSets: List<ProgressSet> = emptyList()
+    val confirmedSets: List<ProgressSet> = emptyList(),
+    val externalVolume: ExternalVolume = ExternalVolume()
 )
 
 class ProgressRepository(
@@ -152,7 +153,8 @@ class ProgressRepository(
             suggestions = absolute?.suggestions ?: ProgressMetrics.progressionSuggestions(sets),
             bodyWeights = periodWeights,
             bodyWeightTrend = ProgressMetrics.bodyWeightTrend(periodWeights.map { it.weightKg }),
-            confirmedSets = sets
+            confirmedSets = sets,
+            externalVolume = ExternalVolumeMetrics.calculate(periodSets, period, timestamp)
         )
     }
 

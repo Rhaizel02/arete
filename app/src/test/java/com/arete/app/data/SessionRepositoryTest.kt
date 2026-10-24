@@ -12,6 +12,7 @@ import com.arete.app.data.local.SessionStatus
 import com.arete.app.data.local.SetType
 import com.arete.app.data.local.WorkoutEntity
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -102,7 +103,7 @@ class SessionRepositoryTest {
         assertEquals(9, prefilled.reps)
         assertFalse(prefilled.isCompleted)
         val view = sessions.observeSession(secondId).first()
-        assertEquals(82.5, view.lastPerformance[BENCH]!!.last().weightKg!!, 0.0)
+        assertEquals(82.5, view.lastPerformance[second.orderedExercises().first().exercise.id]!!.last().weightKg!!, 0.0)
     }
 
     @Test
@@ -221,6 +222,109 @@ class SessionRepositoryTest {
         sessions.moveSet(exerciseId, work.id, 1)
         assertEquals(original.map { it.id }, database.sessionDao().getSets(exerciseId).map { it.id })
         assertEquals(listOf(0, 1), database.sessionDao().getSets(exerciseId).map { it.position })
+    }
+
+    @Test fun prefillUsesOnlyCompletedWorkBeforeStartAndNeverRunsAgain() = runTest {
+        seedTemplate()
+        val first = sessions.startPlannedWorkout(WORKOUT_A)
+        val original = database.sessionDao().getSession(first)!!.orderedExercises().first()
+        sessions.completeSet(original.orderedSets()[0].copy(weightKg = 20.0, reps = 5), false)
+        sessions.completeSet(original.orderedSets()[1].copy(weightKg = 80.0, reps = 9), false)
+        sessions.finishSession(database.sessionDao().getSession(first)!!.session)
+        clock += 1000
+        val item = database.routineDao().getWorkout(WORKOUT_A)!!.orderedExercises().first().item
+        database.routineDao().deleteSets(item.id)
+        database.routineDao().insertSets((0..4).map { PrescriptionSetEntity("changed-$it", item.id, it, if(it == 0) SetType.WARMUP else SetType.WORK, 6, 7) })
+        val nextId = sessions.startPlannedWorkout(WORKOUT_A)
+        val next = database.sessionDao().getSession(nextId)!!.orderedExercises().first()
+        assertEquals(listOf(20.0, 80.0, 80.0, 80.0, 80.0), next.orderedSets().map { it.weightKg })
+        assertTrue(next.sets.all { it.targetRepsMinSnapshot == 6 && it.targetRepsMaxSnapshot == 7 && !it.isCompleted })
+        sessions.updateSet(next.orderedSets()[1].copy(weightKg = 71.5, reps = 6))
+        sessions.updateSet(original.orderedSets()[1].copy(weightKg = 999.0))
+        assertEquals(nextId, sessions.startPlannedWorkout(WORKOUT_A))
+        assertEquals(71.5, database.sessionDao().getSet(next.orderedSets()[1].id)!!.weightKg!!, 0.0)
+    }
+
+    @Test fun incompleteHistoryAndEqualOrFutureFinishAreNotPerformanceReferences() = runTest {
+        seedExercises()
+        val old = sessions.startFreeWorkout()
+        val exercise = sessions.addExercise(old, BENCH)
+        val sets = database.sessionDao().getSets(exercise)
+        sessions.completeSet(sets[0].copy(weightKg = 30.0, reps = 8, isWarmupSnapshot = true), false)
+        sessions.updateSet(sets[1].copy(weightKg = 100.0, reps = 9)) // Uncompleted, never borrowed.
+        sessions.finishSession(database.sessionDao().getSession(old)!!.session)
+        val equal = sessions.startFreeWorkout()
+        val equalExercise = sessions.addExercise(equal, BENCH)
+        assertTrue(database.sessionDao().getSets(equalExercise).all { it.weightKg == null })
+        sessions.deleteSession(database.sessionDao().getSession(equal)!!.session)
+        clock += 1000
+        val next = sessions.startFreeWorkout()
+        val nextExercise = sessions.addExercise(next, BENCH)
+        assertTrue(database.sessionDao().getSets(nextExercise).all { it.weightKg == null })
+        assertTrue(sessions.observeSession(next).first().lastPerformance[nextExercise]!!.single().isWarmupSnapshot)
+    }
+
+    @Test fun repeatedHistoricalInstancesAndSubstitutionStaySeparate() = runTest {
+        seedExercises()
+        val old = sessions.startFreeWorkout()
+        val a = sessions.addExercise(old, BENCH); val b = sessions.addExercise(old, BENCH)
+        sessions.completeSet(database.sessionDao().getSets(a).first().copy(weightKg = 40.0, reps = 8), false)
+        sessions.completeSet(database.sessionDao().getSets(b).first().copy(weightKg = 70.0, reps = 6), false)
+        sessions.finishSession(database.sessionDao().getSession(old)!!.session)
+        clock += 1000
+        val fresh = sessions.startFreeWorkout()
+        val x = sessions.addExercise(fresh, BENCH); val y = sessions.addExercise(fresh, BENCH)
+        assertTrue(database.sessionDao().getSets(x).all { it.weightKg == 40.0 })
+        assertTrue(database.sessionDao().getSets(y).all { it.weightKg == 70.0 })
+        val z = sessions.addExercise(fresh, ROW)
+        sessions.substituteExercise(z, BENCH) // Third occurrence has no comparable historical occurrence.
+        assertTrue(database.sessionDao().getSets(z).all { it.weightKg == null })
+        sessions.substituteExercise(x, ROW)
+        sessions.substituteExercise(x, BENCH)
+        assertTrue(database.sessionDao().getSets(x).all { it.weightKg == 40.0 })
+    }
+
+    @Test fun concurrentStartsCreateOnlyOneActiveSession() = runTest {
+        seedTemplate()
+        val results = kotlinx.coroutines.coroutineScope {
+            List(2) { async { sessions.startPlannedWorkout(WORKOUT_A) } }.map { it.await() }
+        }
+        assertEquals(results[0], results[1])
+        assertEquals(1, database.backupDao().workoutSessions().size)
+    }
+
+    @Test fun aRepeatedInstanceWithoutCompletedSetsDoesNotBorrowTheSecondInstancesPerformance() = runTest {
+        seedExercises()
+        val old = sessions.startFreeWorkout()
+        sessions.addExercise(old, BENCH)
+        val second = sessions.addExercise(old, BENCH)
+        sessions.completeSet(database.sessionDao().getSets(second).first().copy(weightKg = 70.0, reps = 8), false)
+        sessions.finishSession(database.sessionDao().getSession(old)!!.session)
+        clock += 1000
+        val fresh = sessions.startFreeWorkout()
+        val firstNew = sessions.addExercise(fresh, BENCH)
+        val secondNew = sessions.addExercise(fresh, BENCH)
+        assertTrue(database.sessionDao().getSets(firstNew).all { it.weightKg == null })
+        assertTrue(database.sessionDao().getSets(secondNew).all { it.weightKg == 70.0 })
+    }
+
+    @Test fun reorderingTemplateDuplicatesDoesNotFillAnUncompletedOccurrenceFromAnotherSource() = runTest {
+        seedTemplate()
+        val duplicateId = "duplicate-bench"
+        database.routineDao().insertRoutineExercise(RoutineExerciseEntity(duplicateId, WORKOUT_A, BENCH, 2, createdAt = 1, updatedAt = 1))
+        database.routineDao().insertSets(listOf(PrescriptionSetEntity("duplicate-set", duplicateId, 0, SetType.WORK, 6, 8)))
+        val old = sessions.startPlannedWorkout(WORKOUT_A)
+        val original = database.sessionDao().getSession(old)!!.orderedExercises().first()
+        sessions.completeSet(original.orderedSets().last().copy(weightKg = 80.0, reps = 8), false)
+        sessions.finishSession(database.sessionDao().getSession(old)!!.session)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        AreteRepository(database, CatalogSeeder(context, database)).moveExercise(WORKOUT_A, duplicateId, -2)
+        clock += 1000
+        val next = database.sessionDao().getSession(sessions.startPlannedWorkout(WORKOUT_A))!!
+        val empty = next.exercises.first { it.exercise.sourceRoutineExerciseId == duplicateId }
+        val preserved = next.exercises.first { it.exercise.sourceRoutineExerciseId == ROUTINE_BENCH }
+        assertTrue(empty.sets.all { it.weightKg == null && it.reps == null })
+        assertEquals(80.0, preserved.orderedSets().last().weightKg!!, 0.0)
     }
 
     private suspend fun seedExercises() {

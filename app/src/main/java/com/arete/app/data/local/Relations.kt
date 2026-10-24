@@ -75,7 +75,12 @@ data class LastPerformanceRow(
     val reps: Int?,
     val isWarmupSnapshot: Boolean,
     val rir: Int?,
-    val isFailure: Boolean
+    val isFailure: Boolean,
+    val sessionExerciseId: String = "",
+    val exercisePosition: Int = 0,
+    val sourceRoutineExerciseId: String? = null,
+    val occurrenceIndex: Int = 0,
+    val occurrenceCount: Int = 1
 )
 
 /** A single joined read model used to derive every progress metric without N+1 queries. */

@@ -107,6 +107,7 @@ fun SettingsScreen(
                         SectionHeading("Entrenamiento")
                         SettingSwitch("Temporizador de descanso", settings.restTimerEnabled, viewModel::setRestTimerEnabled)
                         SettingSwitch("Vibración", settings.vibrationEnabled, viewModel::setVibrationEnabled)
+                        RestAlertSettings(settings.restAlertsEnabled, viewModel)
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text("Tema")

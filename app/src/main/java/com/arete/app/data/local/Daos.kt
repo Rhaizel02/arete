@@ -222,6 +222,10 @@ interface SessionDao {
     @Query("UPDATE workout_sessions SET restTimerEndAt = NULL, restTimerDurationSeconds = NULL WHERE id = :id")
     suspend fun clearTimer(id: String)
 
+    /** Atomic claim, using existing timer columns: obsolete/duplicate deliveries cannot consume a newer rest. */
+    @Query("UPDATE workout_sessions SET restTimerEndAt = NULL, restTimerDurationSeconds = NULL WHERE id = :id AND status = 'IN_PROGRESS' AND restTimerEndAt = :deadline")
+    suspend fun consumeTimer(id: String, deadline: Long): Int
+
     @Query("UPDATE workout_sessions SET status = 'COMPLETED', completedAt = :completedAt, restTimerEndAt = NULL, restTimerDurationSeconds = NULL WHERE id = :id")
     suspend fun finishSession(id: String, completedAt: Long)
 
@@ -232,7 +236,10 @@ interface SessionDao {
     suspend fun updateSetPosition(id: String, position: Int)
 
     @Query("""
-        SELECT se.exerciseId AS exerciseId,
+        SELECT se.id AS sessionExerciseId, se.position AS exercisePosition,
+               (SELECT COUNT(*) FROM session_exercises prev WHERE prev.sessionId = se.sessionId AND prev.exerciseId = se.exerciseId AND prev.position < se.position) AS occurrenceIndex,
+               (SELECT COUNT(*) FROM session_exercises same WHERE same.sessionId = se.sessionId AND same.exerciseId = se.exerciseId) AS occurrenceCount,
+               se.sourceRoutineExerciseId AS sourceRoutineExerciseId, se.exerciseId AS exerciseId,
                ws.id AS sessionId,
                ws.completedAt AS completedAt,
                ss.position AS position,
@@ -249,21 +256,25 @@ interface SessionDao {
           AND ws.completedAt IS NOT NULL
           AND ws.completedAt < :before
           AND ss.isCompleted = 1
-          AND ws.completedAt = (
-              SELECT MAX(ws2.completedAt)
+          AND ws.id = (
+              SELECT ws2.id
               FROM session_exercises se2
               JOIN workout_sessions ws2 ON ws2.id = se2.sessionId
               WHERE se2.exerciseId = se.exerciseId
                 AND ws2.status = 'COMPLETED'
                 AND ws2.completedAt IS NOT NULL
                 AND ws2.completedAt < :before
+              ORDER BY ws2.completedAt DESC, ws2.id DESC LIMIT 1
           )
-        ORDER BY se.exerciseId, ss.position
+        ORDER BY se.exerciseId, se.position, ss.position
     """)
     suspend fun getLastPerformance(exerciseIds: List<String>, before: Long): List<LastPerformanceRow>
 
     @Query("""
-        SELECT se.exerciseId AS exerciseId,
+        SELECT se.id AS sessionExerciseId, se.position AS exercisePosition,
+               (SELECT COUNT(*) FROM session_exercises prev WHERE prev.sessionId = se.sessionId AND prev.exerciseId = se.exerciseId AND prev.position < se.position) AS occurrenceIndex,
+               (SELECT COUNT(*) FROM session_exercises same WHERE same.sessionId = se.sessionId AND same.exerciseId = se.exerciseId) AS occurrenceCount,
+               se.sourceRoutineExerciseId AS sourceRoutineExerciseId, se.exerciseId AS exerciseId,
                ws.id AS sessionId,
                ws.completedAt AS completedAt,
                ss.position AS position,
@@ -283,16 +294,17 @@ interface SessionDao {
           AND ws.completedAt IS NOT NULL
           AND ws.completedAt < (SELECT startedAt FROM workout_sessions WHERE id = :sessionId)
           AND ss.isCompleted = 1
-          AND ws.completedAt = (
-              SELECT MAX(ws2.completedAt)
+          AND ws.id = (
+              SELECT ws2.id
               FROM session_exercises se2
               JOIN workout_sessions ws2 ON ws2.id = se2.sessionId
               WHERE se2.exerciseId = se.exerciseId
                 AND ws2.status = 'COMPLETED'
                 AND ws2.completedAt IS NOT NULL
                 AND ws2.completedAt < (SELECT startedAt FROM workout_sessions WHERE id = :sessionId)
+              ORDER BY ws2.completedAt DESC, ws2.id DESC LIMIT 1
           )
-        ORDER BY se.exerciseId, ss.position
+        ORDER BY se.exerciseId, se.position, ss.position
     """)
     fun observeLastPerformance(sessionId: String): Flow<List<LastPerformanceRow>>
 

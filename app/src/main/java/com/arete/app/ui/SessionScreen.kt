@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,7 +45,6 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
     onSubstitute: (String) -> Unit, onFinished: () -> Unit, onDeleted: () -> Unit, onRoutineSaved: (String) -> Unit) {
     val flow = remember(sessionId) { viewModel.observeSession(sessionId) }
     val data by flow.collectAsStateWithLifecycle(initialValue = null)
-    val vibration by viewModel.vibrationEnabled.collectAsStateWithLifecycle()
     val confirmed by viewModel.progressState.collectAsStateWithLifecycle()
     val details = data?.session
     val session = details?.session
@@ -65,6 +63,7 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
     var editNotes by remember { mutableStateOf(false) }
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    DisposableEffect(sessionId) { viewModel.sessionVisible(sessionId); onDispose { viewModel.sessionVisible(null) } }
     val focus = LocalFocusManager.current
     fun select(target: Int) {
         focus.clearFocus()
@@ -116,12 +115,12 @@ fun SessionScreen(sessionId: String, viewModel: AreteViewModel, onBack: () -> Un
             if (exercises.isEmpty()) item { EmptyState("Tu sesión empieza aquí", "Añade el primer ejercicio para registrar tus series.", "Añadir ejercicio", onAddExercise) }
             exercises.getOrNull(index)?.let { current ->
                 item(key = current.exercise.id) {
-                    SessionExerciseCard(current, current.exercise.exerciseId?.let { data?.lastPerformance?.get(it) }.orEmpty(), index, exercises.size, viewModel,
+                    SessionExerciseCard(current, data?.lastPerformance?.get(current.exercise.id).orEmpty(), index, exercises.size, viewModel,
                         confirmed.confirmedSets, session,
                         { onSubstitute(current.exercise.id) }, onAddExercise)
                 }
             }
-            session.restTimerEndAt?.let { endAt -> item { RestTimerBanner(endAt, vibration, { viewModel.adjustRestTimer(session, it) }, { viewModel.skipRestTimer(session) }) } }
+            session.restTimerEndAt?.let { endAt -> item { RestTimerBanner(endAt, { viewModel.restTimerElapsed(session.id, endAt) }, { viewModel.adjustRestTimer(session, it) }, { viewModel.skipRestTimer(session) }) } }
             if (exercises.size > 1) item { SectionHeading("Ejercicios de la sesión") }
             exercises.forEachIndexed { position, item -> if (position != index) item(key = item.exercise.id) {
                 TonalCard(onClick = { select(position) }) {
@@ -222,13 +221,14 @@ private fun SessionExerciseCard(details: SessionExerciseWithSets, last: List<Las
 
 @Composable
 private fun SessionSetRow(number: Int, total: Int, set: SessionSetEntity, viewModel: AreteViewModel) {
-    var weight by remember(set.id) { mutableStateOf(set.weightKg?.let(::uiNumber).orEmpty()) }
-    var reps by remember(set.id) { mutableStateOf(set.reps?.toString().orEmpty()) }
-    var rir by remember(set.id) { mutableStateOf(set.rir) }
-    var failure by remember(set.id) { mutableStateOf(set.isFailure) }
-    var warmup by remember(set.id) { mutableStateOf(set.isWarmupSnapshot) }
+    var weight by rememberSaveable(set.id) { mutableStateOf(set.weightKg?.let(::uiNumber).orEmpty()) }
+    var reps by rememberSaveable(set.id) { mutableStateOf(set.reps?.toString().orEmpty()) }
+    var rir by rememberSaveable(set.id) { mutableStateOf(set.rir) }
+    var failure by rememberSaveable(set.id) { mutableStateOf(set.isFailure) }
+    var warmup by rememberSaveable(set.id) { mutableStateOf(set.isWarmupSnapshot) }
     var menu by remember { mutableStateOf(false) }
     var rirMenu by remember { mutableStateOf(false) }
+    var completing by remember(set.id) { mutableStateOf(false) }
     fun current() = set.copy(weightKg = weight.replace(',', '.').toDoubleOrNull(), reps = reps.toIntOrNull(), rir = rir, isFailure = failure, isWarmupSnapshot = warmup)
     Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.shapes.medium).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box {
@@ -251,7 +251,10 @@ private fun SessionSetRow(number: Int, total: Int, set: SessionSetEntity, viewMo
                 DropdownMenuItem(text = { Text("Fallo") }, onClick = { rirMenu = false; rir = null; failure = true; viewModel.updateSessionSet(current()) })
             }
         }
-        IconButton(onClick = { viewModel.toggleSessionSetComplete(current()) }, modifier = Modifier.size(48.dp).background(if (set.isCompleted) ActionBlue else MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(12.dp))) {
+        IconButton(enabled = !completing, onClick = {
+            completing = true
+            viewModel.toggleSessionSetComplete(current()).invokeOnCompletion { completing = false }
+        }, modifier = Modifier.size(48.dp).background(if (set.isCompleted) ActionBlue else MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(12.dp))) {
             Icon(if (set.isCompleted) Icons.Default.Check else Icons.Default.RadioButtonUnchecked, if (set.isCompleted) "Desmarcar serie $number" else "Completar serie $number", tint = if (set.isCompleted) Color.White else MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -268,13 +271,11 @@ private fun NumericCell(value: String, label: String, modifier: Modifier, keyboa
 }
 
 @Composable
-private fun RestTimerBanner(endAt: Long, vibration: Boolean, onAdjust: (Int) -> Unit, onSkip: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
+private fun RestTimerBanner(endAt: Long, onElapsed: () -> Unit, onAdjust: (Int) -> Unit, onSkip: () -> Unit) {
     var remaining by remember(endAt) { mutableLongStateOf((endAt - System.currentTimeMillis()).coerceAtLeast(0)) }
     LaunchedEffect(endAt) {
         do { remaining = (endAt - System.currentTimeMillis()).coerceAtLeast(0); if (remaining > 0) delay(250) } while (remaining > 0)
-        if (vibration) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        onSkip()
+        onElapsed()
     }
     val seconds = ceil(remaining / 1000.0).toInt()
     TonalCard {

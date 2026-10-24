@@ -98,3 +98,9 @@ Búsqueda ES/EN combinada con filtros locales de músculo y equipamiento, diez g
 ## Catálogo completo — Bloque 8
 
 La cobertura actual es **45/45 guías ampliadas ES/EN y 9/45 ejercicios ilustrados (18 posiciones)**. Se añaden seis pares de ilustraciones Everkinetic: cinco desde su fuente original bajo CC BY-SA 4.0 y uno vía wger bajo CC BY-SA 3.0, conservando créditos y licencias por archivo. Se priorizan las instrucciones, con ilustraciones y referencias desplegables; cada catálogo/selector tiene sus propios filtros. [Fuentes, investigación, cobertura y límites](docs/block-8-catalog.md), [créditos](docs/licenses/exercise-art.md) y [validación](docs/design/validation-block-8/README.md).
+
+## Macrobloque 9–10 — Entrenamiento 2.0 + Progreso 3.0
+
+Precarga por tipo y aparición histórica, avisos de descanso Android opcionales, borradores de prescripción restaurables y guardado con comprobación de concurrencia. Duración estimada de workouts y volumen externo derivado por sesión/ejercicio/músculo/semana, sin modificar Room v2 ni los JSON v1.
+
+[Decisiones y fórmulas](docs/block-9-10-training-progress.md) · [Validación real](docs/design/validation-block-9-10/README.md) · [Backlog maestro](docs/product/BACKLOG.md).

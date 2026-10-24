@@ -148,6 +148,7 @@ class AreteViewModel(
 
     fun toggleSessionSetComplete(set: SessionSetEntity) = launchAction {
         sessions.completeSet(set, preferences.restTimerEnabled.first())
+        app.restTimers.reconcile()
     }
 
     fun addSessionSet(exerciseId: String) = launchAction { sessions.addSet(exerciseId) }
@@ -160,12 +161,18 @@ class AreteViewModel(
 
     fun adjustRestTimer(session: WorkoutSessionEntity, seconds: Int) = launchAction {
         sessions.adjustTimer(session, seconds)
+        app.restTimers.reconcile()
     }
 
-    fun skipRestTimer(session: WorkoutSessionEntity) = launchAction { sessions.skipTimer(session) }
+    fun skipRestTimer(session: WorkoutSessionEntity) = launchAction { sessions.skipTimer(session); app.restTimers.dismiss(); app.restTimers.reconcile() }
+    fun restTimerElapsed(sessionId: String, deadline: Long) = launchAction { app.restTimers.elapsed(sessionId, deadline, false) }
+    fun sessionVisible(id: String?) { app.restTimers.visibleSessionId = id }
+    suspend fun activeSessionId() = app.database.sessionDao().getActiveSession()?.session?.id
+    fun setRestAlertsEnabled(enabled: Boolean) = launchAction { preferences.setRestAlertsEnabled(enabled); app.restTimers.reconcile() }
 
     fun finishSession(session: WorkoutSessionEntity, onFinished: () -> Unit) = launchAction {
         sessions.finishSession(session)
+        app.restTimers.dismiss(); app.restTimers.reconcile()
         val record = progress.recordsForSession(session.id).firstOrNull()
         _messages.emit(record?.let {
             "Nuevo PR · ${it.exerciseName} · ${formatKg(it.weightKg)} kg × ${it.reps}"
@@ -175,6 +182,7 @@ class AreteViewModel(
 
     fun deleteSession(session: WorkoutSessionEntity, onDeleted: () -> Unit) = launchAction("Sesión eliminada") {
         sessions.deleteSession(session)
+        app.restTimers.dismiss(); app.restTimers.reconcile()
         onDeleted()
     }
 
@@ -185,6 +193,7 @@ class AreteViewModel(
 
     fun setRestTimerEnabled(enabled: Boolean) = viewModelScope.launch {
         preferences.setRestTimerEnabled(enabled)
+        app.restTimers.reconcile()
     }
 
     fun setWeeklyGoal(goal: Int) = viewModelScope.launch { preferences.setWeeklyGoal(goal) }
@@ -221,7 +230,7 @@ class AreteViewModel(
     }
 
     fun restoreBackup(raw: String, onRestored: () -> Unit = {}) = launchAction("Backup restaurado") {
-        app.automaticBackups.restore(raw)
+        app.restTimers.restoring { app.automaticBackups.restore(raw) }
         onRestored()
     }
 
@@ -279,9 +288,10 @@ class AreteViewModel(
         notes: String,
         groupId: String?,
         sets: List<SetDraft>,
-        onSaved: () -> Unit
+        onSaved: () -> Unit,
+        expectedSets: List<com.arete.app.data.local.PrescriptionSetEntity>? = null
     ) = launchAction("Configuración guardada") {
-        repository.savePrescription(item, restSeconds, incrementKg, notes, groupId, sets)
+        repository.savePrescription(item, restSeconds, incrementKg, notes, groupId, sets, expectedSets)
         onSaved()
     }
 

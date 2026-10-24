@@ -38,6 +38,7 @@ fun ProgressScreen(viewModel: AreteViewModel, onOpenExercise: (String) -> Unit, 
                 MetricTile("Sesiones por semana", uiNumber(state.stats.workoutsPerWeek), Modifier.weight(1f), "media del período")
                 MetricTile("Duración media", state.stats.averageDurationMinutes?.let { "$it min" } ?: "—", Modifier.weight(1f), "sesiones con duración fiable")
             } }
+            item { VolumeSection(state.externalVolume, period = period) }
             item { TonalCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Evolución de fuerza", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)

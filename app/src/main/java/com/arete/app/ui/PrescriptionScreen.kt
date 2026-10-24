@@ -42,6 +42,13 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import com.arete.app.data.local.RoutineExerciseEntity
+import com.arete.app.data.local.PrescriptionSetEntity
+import java.util.UUID
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -49,12 +56,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arete.app.data.SetDraft
 import com.arete.app.data.local.SetType
 
-private data class SetEditorState(
+@Serializable
+internal data class SetEditorState(
+    val id: String = UUID.randomUUID().toString(),
     val type: SetType = SetType.WORK,
     val isRange: Boolean = true,
     val min: String = "8",
     val max: String = "12"
 )
+
+@Serializable
+internal data class PrescriptionSource(val item: RoutineExerciseEntity, val sets: List<PrescriptionSetEntity>)
+
+internal val prescriptionRowsSaver = Saver<List<SetEditorState>, String>(
+    save = { Json.encodeToString(it) }, restore = { Json.decodeFromString(it) })
+private val sourceSaver = Saver<PrescriptionSource?, String>(
+    save = { Json.encodeToString(it) }, restore = { Json.decodeFromString(it) })
 
 @Composable
 fun PrescriptionScreen(
@@ -66,13 +83,14 @@ fun PrescriptionScreen(
     val routineFlow = remember(routineId) { viewModel.observeRoutine(routineId) }
     val routine by routineFlow.collectAsStateWithLifecycle(initialValue = null)
     val details = routine?.workouts?.flatMap { it.exercises }?.firstOrNull { it.item.id == itemId }
-    var rest by remember(itemId) { mutableStateOf("120") }
-    var increment by remember(itemId) { mutableStateOf("") }
-    var notes by remember(itemId) { mutableStateOf("") }
-    var groupId by remember(itemId) { mutableStateOf("") }
-    var error by remember(itemId) { mutableStateOf<String?>(null) }
-    var initialized by remember(itemId) { mutableStateOf(false) }
-    val sets = remember(itemId) { mutableStateListOf<SetEditorState>() }
+    var rest by rememberSaveable(itemId) { mutableStateOf("120") }
+    var increment by rememberSaveable(itemId) { mutableStateOf("") }
+    var notes by rememberSaveable(itemId) { mutableStateOf("") }
+    var groupId by rememberSaveable(itemId) { mutableStateOf("") }
+    var error by rememberSaveable(itemId) { mutableStateOf<String?>(null) }
+    var initialized by rememberSaveable(itemId) { mutableStateOf(false) }
+    var sets by rememberSaveable(itemId, stateSaver = prescriptionRowsSaver) { mutableStateOf(emptyList<SetEditorState>()) }
+    var original by rememberSaveable(itemId, stateSaver = sourceSaver) { mutableStateOf<PrescriptionSource?>(null) }
     val focus = LocalFocusManager.current
 
     LaunchedEffect(details?.item?.id) {
@@ -81,21 +99,22 @@ fun PrescriptionScreen(
             increment = details.item.incrementKg?.toString().orEmpty()
             notes = details.item.notes
             groupId = details.item.groupId.orEmpty()
-            sets.clear()
-            sets.addAll(details.orderedSets().map { set ->
+            sets = details.orderedSets().map { set ->
                 SetEditorState(
+                    id = set.id,
                     type = set.type,
                     isRange = set.repsMin != set.repsMax,
                     min = set.repsMin.toString(),
                     max = set.repsMax.toString()
                 )
-            })
+            }
+            original = PrescriptionSource(details.item, details.orderedSets())
             initialized = true
         }
     }
 
     fun save() {
-        val item = details?.item ?: return
+        val source = original ?: return
         val restValue = rest.toIntOrNull()
         val incrementValue = increment.replace(',', '.').toDoubleOrNull()
         val drafts = sets.mapNotNull { set ->
@@ -105,13 +124,15 @@ fun PrescriptionScreen(
         }
         error = when {
             restValue == null || restValue !in 0..3600 -> "Introduce un descanso entre 0 y 3600 segundos."
-            increment.isNotBlank() && (incrementValue == null || incrementValue < 0) -> "El incremento de peso no es válido."
+            increment.isNotBlank() && (incrementValue == null || !incrementValue.isFinite() || incrementValue < 0) -> "El incremento de peso no es válido."
             sets.isEmpty() -> "Añade al menos una serie."
             drafts.size != sets.size -> "Revisa las repeticiones de cada serie."
+            details == null -> "El ejercicio ya no existe en la plantilla. El borrador no se ha guardado."
+            details.item != source.item || details.orderedSets() != source.sets -> "La plantilla cambió desde que abriste el editor. Vuelve a abrirlo para revisar la versión actual; no se sobrescribirá."
             else -> null
         }
         if (error == null) viewModel.savePrescription(
-            item, restValue!!, incrementValue, notes, groupId, drafts, onBack
+            source.item, restValue!!, incrementValue, notes, groupId, drafts, onBack, source.sets
         )
     }
 
@@ -133,18 +154,18 @@ fun PrescriptionScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Text("Prescripción", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
-            itemsIndexed(sets, key = { index, _ -> index }) { index, set ->
+            itemsIndexed(sets, key = { _, set -> set.id }) { index, set ->
                 SetEditorCard(
                     number = index + 1,
                     state = set,
-                    onChange = { sets[index] = it },
-                    onDelete = { if (sets.size > 1) sets.removeAt(index) },
+                    onChange = { changed -> sets = sets.map { if (it.id == set.id) changed else it } },
+                    onDelete = { if (sets.size > 1) sets = sets.filterNot { it.id == set.id } },
                     total = sets.size,
-                    onMove = { delta -> focus.clearFocus(); moveEditorItem(sets, index, delta) }
+                    onMove = { delta -> focus.clearFocus(); sets = sets.toMutableList().also { moveEditorItem(it, index, delta) } }
                 )
             }
             item {
-                SecondaryAction(onClick = { sets += (sets.lastOrNull() ?: SetEditorState()) }, modifier = Modifier.fillMaxWidth()) {
+                SecondaryAction(onClick = { sets = sets + (sets.lastOrNull()?.copy(id = UUID.randomUUID().toString()) ?: SetEditorState()) }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Add, null)
                     Text("Añadir serie", Modifier.padding(start = 8.dp))
                 }

@@ -99,6 +99,8 @@ fun ExerciseProgressScreen(exerciseId: String, viewModel: AreteViewModel, onBack
         ) {
             item { ProgressPeriodSelector(period) { viewModel.progressPeriod.value = it } }
             item { Text("DATOS DEL PERÍODO · ${period.label.uppercase()}", style = MaterialTheme.typography.labelSmall) }
+            item { VolumeSection(com.arete.app.data.ExternalVolumeMetrics.calculate(
+                state.confirmedSets.filter { it.exerciseId == exerciseId }, period, System.currentTimeMillis()), exerciseId, period) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
